@@ -88,6 +88,22 @@ DOMAINS = {
              "SAP BDC data products · Snowflake · Cortex Agent"),
         ],
     ),
+    "spend": dict(
+        segments="segments_spend",
+        app="http://localhost:5181/",
+        work=pathlib.Path("/tmp/spend_video"),
+        out=HOME / "Documents" / "SAP" / "SAP_Spend_360_Walkthrough.mp4",
+        title="SAP Spend 360",
+        subtitle="Spend Intelligence on SAP BDC Data\nusing BDC Connect Zero Copy",
+        links=[
+            ("Live application",
+             "aszht4-sfsenorthamerica-dfreriks-aws1-w2.snowflakecomputing.app"),
+            ("Source and documentation",
+             "github.com/sfc-gh-dfreriks/sap-bdc-spend-360"),
+            ("Built on",
+             "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
+        ],
+    ),
 }
 
 W, H = 1600, 1000              # browser viewport

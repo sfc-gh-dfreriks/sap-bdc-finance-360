@@ -53,6 +53,11 @@ APPS = {
         "sidebar": SKILLS / "people_360_react/client/src/components/Sidebar.tsx",
         "out": pathlib.Path("/tmp/people_shots"),
     },
+    "spend": {
+        "url": "http://localhost:5181",
+        "sidebar": SKILLS / "spend_360_react/client/src/components/Sidebar.tsx",
+        "out": pathlib.Path("/tmp/spend_shots"),
+    },
 }
 
 
@@ -113,6 +118,10 @@ def main() -> int:
         page.goto(cfg["url"], wait_until="domcontentloaded", timeout=60000)
         found = settle(page)
         print(f"  landed on {cfg['url']} ({found})")
+        for label in cfg.get("preclick", []):
+            page.get_by_role("button", name=label, exact=True).click(timeout=15000)
+            settle(page)
+            print(f"  pre-click: {label}")
 
         for i, (pid, label) in enumerate(items):
             try:

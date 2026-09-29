@@ -80,6 +80,10 @@ export function fetchPeriodAnalysis(cc: string[], fy: string[]) {
   return get<any>(`/period-analysis?${qs}`);
 }
 
+export function fetchLineage() {
+  return get<any>('/lineage');
+}
+
 export async function fetchAnalyst(messages: { role: string; content: string }[]) {
   const res = await fetch(`${BASE}/analyst`, {
     method: 'POST',

@@ -796,4 +796,56 @@ router.post("/api/analyst/run-sql", async (req: Request, res: Response) => {
   }
 });
 
+// ---------------------------------------------------------------------------
+// GET /api/lineage — BDC sources & medallion lineage for this app
+// ---------------------------------------------------------------------------
+function buildLineage(c: any) {
+  const p = (sapSystem: string, dataProduct: string, l0Object: string, l1Object: string, rows: unknown, usage: string) =>
+    ({ sapSystem, dataProduct, l0Object, l1Object: `SAP_BDC_L1.${l1Object}`, rows, usage });
+  return {
+    app: "SAP BDC Finance 360",
+    database: "SAP_FINANCE_360",
+    sourceSystems: ["SAP S/4HANA Finance — Financial Accounting (FI-GL / FI-AP)", "SAP S/4HANA Controlling (CO-CCA / CO-PCA)"],
+    summary:
+      "Journal entries, supplier invoices and cost / profit center / GL account master data flow from SAP S/4HANA into " +
+      "Snowflake as SAP BDC zero-copy data products (L0), exposed as passthrough views (L1), and curated into journal, " +
+      "GL balance, P&L, cost center, profit center and AP aging dynamic tables plus a semantic view (L2) that serve this " +
+      "app and the SAP Finance 360 Analyst. Accounts receivable aging is a generated demo table.",
+    products: [
+      p("S/4HANA Finance", "Journal Entry Header", "SAP_BDC_DEMO_JOURNAL_ENTRY_HEADER.BDCCONNECT.JOURNALENTRY", "JOURNALENTRY", c.je, "Document headers, types & posting dates"),
+      p("S/4HANA Finance", "Entry View Journal Entry — Operational Acctg Doc Item", "SAP_BDC_DEMO_ENTRY_VIEW_JOURNAL_ENTRY.BDCCONNECT.OPERATIONALACCTGDOCITEM", "OPERATIONALACCTGDOCITEM", c.acctg, "GL line items: revenue, expenses, P&L, GL balances"),
+      p("S/4HANA Finance", "Supplier Invoice", "SAP_BDC_DEMO_SUPPLIER_INVOICE.BDCCONNECT.SUPPLIERINVOICE", "SUPPLIERINVOICE", c.supinv, "Accounts payable & AP aging"),
+      p("S/4HANA Controlling", "Cost Center", "SAP_BDC_DEMO_COST_CENTER.BDCCONNECT.COSTCENTER", "COSTCENTER", c.costctr, "Cost center / department master"),
+      p("S/4HANA Controlling", "Profit Center", "SAP_BDC_DEMO_PROFIT_CENTER.BDCCONNECT.PROFITCENTER", "PROFITCENTER", c.profitctr, "Profit center / segment master"),
+      p("S/4HANA Finance", "General Ledger Account", "SAP_BDC_DEMO_GENERAL_LEDGER_ACCOUNT.BDCCONNECT.GENERALLEDGERACCOUNT", "GENERALLEDGERACCOUNT", c.glacct, "GL account master"),
+    ],
+    curated: [
+      { object: "ANALYTICS.DT_JOURNAL_ENTRY_360", rows: c.dt_je },
+      { object: "ANALYTICS.DT_AP_AGING", rows: c.dt_ap },
+      { object: "ANALYTICS.DT_AR_AGING", rows: c.dt_ar },
+    ],
+    layers: [
+      { name: "SAP Source Systems", tone: "sap", objects: ["SAP S/4HANA Finance (FI-GL / FI-AP)", "SAP S/4HANA Controlling (CO-CCA / CO-PCA)"] },
+      { name: "L0 — Bronze (BDC Zero-Copy)", tone: "bronze", objects: ["SAP_BDC_DEMO_JOURNAL_ENTRY_HEADER", "SAP_BDC_DEMO_ENTRY_VIEW_JOURNAL_ENTRY", "SAP_BDC_DEMO_SUPPLIER_INVOICE", "SAP_BDC_DEMO_COST_CENTER", "SAP_BDC_DEMO_PROFIT_CENTER", "SAP_BDC_DEMO_GENERAL_LEDGER_ACCOUNT"] },
+      { name: "L1 — Silver (Passthrough Views)", tone: "silver", objects: ["SAP_BDC_L1.JOURNALENTRY", "SAP_BDC_L1.OPERATIONALACCTGDOCITEM", "SAP_BDC_L1.SUPPLIERINVOICE", "SAP_BDC_L1.COSTCENTER", "SAP_BDC_L1.PROFITCENTER", "SAP_BDC_L1.GENERALLEDGERACCOUNT"] },
+      { name: "L2 — Gold (Dynamic Tables + Semantic View)", tone: "gold", objects: ["ANALYTICS.DT_JOURNAL_ENTRY_360", "ANALYTICS.DT_GL_BALANCE", "ANALYTICS.DT_PNL_SUMMARY", "ANALYTICS.DT_EXPENSE_BY_COSTCENTER", "ANALYTICS.DT_REVENUE_BY_PROFITCENTER", "ANALYTICS.DT_AP_AGING", "ANALYTICS.DT_AR_AGING", "ANALYTICS.SAP_FINANCE_360 (Semantic View)"] },
+      { name: "AI + Application", tone: "ai", objects: ["ANALYTICS.SAP_FINANCE_360_AGENT (Cortex Agent)", "SAP BDC Finance 360 (React)"] },
+    ],
+    note:
+      "Journal, GL, P&L, cost center, profit center and AP figures derive from the BDC data products above; " +
+      "AR aging (DT_AR_AGING — customers, invoices, payments) is generated demo data not present in the standard products.",
+  };
+}
+
+router.get("/api/lineage", async (_req: Request, res: Response) => {
+  try {
+    const c = (await runQuery(
+      `SELECT JE AS je, ACCTG AS acctg, SUPINV AS supinv, COSTCTR AS costctr, PROFITCTR AS profitctr, GLACCT AS glacct, DT_JE AS dt_je, DT_AP AS dt_ap, DT_AR AS dt_ar FROM APP_DATA.LINEAGE_COUNTS`))[0] as any;
+    res.json(buildLineage(c));
+  } catch (err) {
+    console.error("GET /api/lineage error:", err);
+    res.status(500).json({ error: String(err) });
+  }
+});
+
 export default router;

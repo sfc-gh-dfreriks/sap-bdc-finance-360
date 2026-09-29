@@ -242,3 +242,17 @@ LEFT JOIN SAP_FINANCE_360.SAP_BDC_L1.PROFITCENTER pc
 WHERE li.DEBITCREDITCODE = 'H'
   AND li.GLACCOUNT LIKE '4%'
 GROUP BY li.COMPANYCODE, li.PROFITCENTER, pc.SEGMENT, li.GLACCOUNT, li.FISCALYEAR, li.FISCALPERIOD;
+
+-- ------------------------------------------- lineage snapshot (for Native App,
+-- which bundles L2 only and cannot see the L1 / L0 shares)
+create or replace table SAP_FINANCE_360.ANALYTICS.LINEAGE_COUNTS as
+select
+  (select count(*) from SAP_FINANCE_360.SAP_BDC_L1.JOURNALENTRY) as JE,
+  (select count(*) from SAP_FINANCE_360.SAP_BDC_L1.OPERATIONALACCTGDOCITEM) as ACCTG,
+  (select count(*) from SAP_FINANCE_360.SAP_BDC_L1.SUPPLIERINVOICE) as SUPINV,
+  (select count(*) from SAP_FINANCE_360.SAP_BDC_L1.COSTCENTER) as COSTCTR,
+  (select count(*) from SAP_FINANCE_360.SAP_BDC_L1.PROFITCENTER) as PROFITCTR,
+  (select count(*) from SAP_FINANCE_360.SAP_BDC_L1.GENERALLEDGERACCOUNT) as GLACCT,
+  (select count(*) from SAP_FINANCE_360.ANALYTICS.DT_JOURNAL_ENTRY_360) as DT_JE,
+  (select count(*) from SAP_FINANCE_360.ANALYTICS.DT_AP_AGING) as DT_AP,
+  (select count(*) from SAP_FINANCE_360.ANALYTICS.DT_AR_AGING) as DT_AR;

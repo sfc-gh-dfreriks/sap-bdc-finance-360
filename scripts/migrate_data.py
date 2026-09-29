@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Bundle the 8 Finance 360 tables into an application package's SHARED_DATA
+Bundle the 9 Finance 360 tables into an application package's SHARED_DATA
 schema so the Native App is fully self-contained (no consumer references).
 
 Two modes:
@@ -35,6 +35,7 @@ SOURCES = {
     "DT_EXPENSE_BY_COSTCENTER":   "SAP_FINANCE_360.ANALYTICS.DT_EXPENSE_BY_COSTCENTER",
     "DT_REVENUE_BY_PROFITCENTER": "SAP_FINANCE_360.ANALYTICS.DT_REVENUE_BY_PROFITCENTER",
     "DT_JOURNAL_ENTRY_360":       "SAP_FINANCE_360.ANALYTICS.DT_JOURNAL_ENTRY_360",
+    "LINEAGE_COUNTS":             "SAP_FINANCE_360.ANALYTICS.LINEAGE_COUNTS",
 }
 PKG = "FINANCE_360_PKG"
 

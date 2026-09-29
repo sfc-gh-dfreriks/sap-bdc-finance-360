@@ -104,6 +104,23 @@ DOMAINS = {
              "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
         ],
     ),
+    "working_capital": dict(
+        segments="segments_working_capital",
+        app="http://localhost:5185/",
+        work=pathlib.Path("/tmp/wc_video"),
+        out=HOME / "Documents" / "SAP" / "Working_Capital_360_Presales_Kit" / "SAP_Working_Capital_360_Walkthrough.mp4",
+        title="SAP Working Capital 360",
+        subtitle="Working Capital Insights on SAP BDC Data\nusing BDC Connect Zero Copy",
+        tagline="real BDC journal lines, with flagged demo enrichment",
+        links=[
+            ("Live application",
+             "eszht4-sfsenorthamerica-dfreriks-aws1-w2.snowflakecomputing.app"),
+            ("Public demo",
+             "sfc-gh-dfreriks.github.io/working-capital-360-public"),
+            ("Built on",
+             "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
+        ],
+    ),
 }
 
 W, H = 1600, 1000              # browser viewport
@@ -314,7 +331,7 @@ def phase_cards():
     mins = tl["total"] / 60
     title_card(d / "_title.png",
                f"A narrated walkthrough · {mins:.0f} minutes · "
-               f"every figure computed live, not illustrative")
+               + CFG.get("tagline", "every figure computed live, not illustrative"))
     end_card(d / "_end.png")
     print(f"  {len(tl['segments'])} caption cards + title + end card")
 

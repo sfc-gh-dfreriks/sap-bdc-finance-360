@@ -31,6 +31,7 @@ import argparse
 import importlib
 import json
 import pathlib
+import re
 import shutil
 import subprocess
 import sys
@@ -121,6 +122,58 @@ DOMAINS = {
              "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
         ],
     ),
+    "enterprise": dict(
+        segments="segments_enterprise",
+        app="http://localhost:5186/",
+        work=pathlib.Path("/tmp/enterprise_video"),
+        out=HOME / "Documents" / "SAP" / "Enterprise_Ontology_Presales_Kit" / "SAP_Enterprise_Ontology_Walkthrough.mp4",
+        title="SAP Enterprise Ontology",
+        subtitle="One ontology across six SAP BDC 360 apps",
+        tagline="golden records from a labelled demo crosswalk",
+        links=[
+            ("Public demo", "sfc-gh-dfreriks.github.io/enterprise-ontology"),
+            ("Source and documentation", "github.com/sfc-gh-dfreriks/enterprise-ontology"),
+            ("Built on", "SAP BDC zero-copy shares · Snowflake · Cortex"),
+        ],
+    ),
+    "enterprise_deep": dict(
+        segments="segments_enterprise_deep",
+        app="http://localhost:5186/",
+        work=pathlib.Path("/tmp/enterprise_deep_video"),
+        out=HOME / "Documents" / "SAP" / "Enterprise_Ontology_Presales_Kit" / "SAP_Enterprise_Ontology_Deep_Dive.mp4",
+        title="SAP Enterprise Ontology — Deep Dive",
+        subtitle="Managing the organisation across six SAP BDC 360 apps",
+        tagline="scenario modelling · management use cases · Cortex",
+        links=[
+            ("Public demo", "sfc-gh-dfreriks.github.io/enterprise-ontology"),
+            ("Source and documentation", "github.com/sfc-gh-dfreriks/enterprise-ontology"),
+            ("Built on", "SAP BDC zero-copy shares · Snowflake · Cortex"),
+        ],
+    ),
+    "supply_chain_demo": dict(
+        segments="segments_supply_chain_demo",
+        app="http://localhost:5174/",
+        # One video across three surfaces; each segment names its app.
+        apps={
+            "snowsight": "https://app.snowflake.com/sfsenorthamerica/dfreriks_aws1_w2/",
+            "sc360": "http://localhost:5174/",
+            "ontology": "http://localhost:5179/",
+        },
+        storage_state=HOME / ".snowflake" / "video" / "snowsight_state.json",
+        work=pathlib.Path("/tmp/sc_demo_video"),
+        out=HOME / "Documents" / "SAP" / "SAP_Supply_Chain_360_Demo.mp4",
+        title="SAP Supply Chain 360 on SAP BDC",
+        subtitle="Zero-copy SAP data to\nAI-driven supply chain decisions",
+        tagline="Snowsight, Supply Chain 360 and the Supply Chain Ontology",
+        links=[
+            ("Zero-copy connection",
+             "Snowsight · Ingestion · Zero-Copy · SAP_BDC_CONNECT_ZC"),
+            ("Supply chain apps",
+             "Supply Chain 360 · Supply Chain Ontology (Scenario Studio)"),
+            ("Built on",
+             "SAP BDC Connect · Snowflake · Cortex Analyst · knowledge graph"),
+        ],
+    ),
 }
 
 W, H = 1600, 1000              # browser viewport
@@ -159,7 +212,102 @@ def duration(path):
 
 # ------------------------------------------------------------------- 1. narrate
 
-def phase_narrate(voice, rate):
+PVSAY_SRC = pathlib.Path(__file__).resolve().parent.parent / "pvsay" / "pvsay.swift"
+PVSAY_BIN = HOME / ".snowflake" / "video" / "pvsay"
+
+
+def pvsay():
+    """Compile the Personal Voice helper on first use (or when its source changes)."""
+    if not PVSAY_BIN.exists() or PVSAY_BIN.stat().st_mtime < PVSAY_SRC.stat().st_mtime:
+        PVSAY_BIN.parent.mkdir(parents=True, exist_ok=True)
+        run(["swiftc", "-O", str(PVSAY_SRC), "-o", str(PVSAY_BIN)])
+    return str(PVSAY_BIN)
+
+
+_PERSONAL = None
+
+
+def personal_voice():
+    """Name of the first macOS Personal Voice the helper can see (cached)."""
+    global _PERSONAL
+    if _PERSONAL is None:
+        r = subprocess.run([pvsay(), "--status"], capture_output=True, text=True, timeout=120)
+        names = [ln.split(":", 1)[1].split("\t")[0].strip() for ln in r.stdout.splitlines()
+                 if ln.startswith("personal voice:")]
+        if not names:
+            sys.exit("No usable Personal Voice: " + (r.stdout + r.stderr).strip() + "\n"
+                     "Create one in System Settings ▸ Accessibility ▸ Personal Voice and allow apps "
+                     "to request it, or pass --engine say.")
+        _PERSONAL = names[0]
+    return _PERSONAL
+
+
+# Cloned-voice engine (Qwen3-TTS via mlx-audio, run in its own venv).
+VOICECLONE = HOME / ".snowflake" / "video" / "voiceclone"
+QWEN_SAY = pathlib.Path(__file__).resolve().parent.parent / "voiceclone" / "qwen_say.py"
+REF_AUDIO = VOICECLONE / "ref" / "dave.wav"
+REF_TEXT = HOME / "Desktop" / "voice_samples" / "dave_reference.txt"
+
+
+def qwen_batch(items):
+    """Voice [(text, dest_wav)] in Dave's cloned voice with one model load."""
+    for f in (VOICECLONE / ".venv" / "bin" / "python", REF_AUDIO, REF_TEXT):
+        if not f.exists():
+            sys.exit(f"qwen3 engine needs {f} — see tools/voiceclone/qwen_say.py")
+    jobs = work() / "qwen_jobs.json"
+    jobs.write_text(json.dumps(dict(ref_audio=str(REF_AUDIO), ref_text=REF_TEXT.read_text().strip(),
+                                    jobs=[dict(text=t, out=str(d)) for t, d in items])))
+    r = subprocess.run([str(VOICECLONE / ".venv" / "bin" / "python"), str(QWEN_SAY), str(jobs)],
+                       capture_output=True, text=True)
+    if r.returncode:
+        sys.exit("Qwen3-TTS failed:\n" + r.stderr[-2000:])
+
+
+SLNC = re.compile(r"\[\[slnc (\d+)\]\]")
+
+
+def speak(engine, voice, rate, text, dest):
+    """Write `text` to an audio file with the chosen engine.
+
+    personal — your macOS Personal Voice (default)
+    say      — a named macOS system voice
+    Both render through `say`: on macOS 26 AVSpeechSynthesizer.write() returns no
+    buffers for Personal Voices, while `say` renders them to file correctly.
+
+    Personal Voices ignore `[[slnc N]]` pause markers (system voices honour them),
+    so the line is split at each marker, the pieces are voiced separately, and
+    exactly N ms of silence is spliced between them.
+    """
+    name = personal_voice() if engine == "personal" else voice
+    if engine != "personal" or not SLNC.search(text):
+        run(["say", "-v", name, "-r", str(rate), "-o", str(dest), text])
+        return
+    tmp = dest.parent / f"_{dest.stem}"
+    tmp.mkdir(exist_ok=True)
+    parts, pause = [], 0
+    for k, chunk in enumerate(SLNC.split(text)):
+        if k % 2:                                   # a captured pause length (ms)
+            pause += int(chunk)
+            continue
+        if not chunk.strip():
+            continue
+        if pause and parts:
+            sil = tmp / f"s{len(parts)}.aiff"
+            run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
+                 "anullsrc=r=22050:cl=mono", "-t", f"{pause / 1000:.3f}", "-c:a", "pcm_s16be", str(sil)])
+            parts.append(sil)
+        pause = 0
+        f = tmp / f"p{len(parts)}.aiff"
+        run(["say", "-v", name, "-r", str(rate), "-o", str(f), chunk.strip()])
+        parts.append(f)
+    lst = tmp / "list.txt"
+    lst.write_text("".join(f"file '{x}'\n" for x in parts))
+    run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", str(lst),
+         "-c:a", "pcm_s16be", str(dest)])
+    shutil.rmtree(tmp, ignore_errors=True)
+
+
+def phase_narrate(voice, rate, engine="say"):
     """Synthesise each line and measure it.
 
     Start offsets are deliberately NOT computed here. They come from the capture,
@@ -169,15 +317,21 @@ def phase_narrate(voice, rate):
     d = work() / "audio"
     d.mkdir(parents=True, exist_ok=True)
     clips = []
+    if engine == "qwen3":
+        print("  voicing all segments with Qwen3-TTS (cloned voice)…")
+        qwen_batch([(seg["narration"], d / f"{seg['id']}.src.wav") for seg in SEGMENTS])
     for seg in SEGMENTS:
         aiff = d / f"{seg['id']}.aiff"
         wav = d / f"{seg['id']}.wav"
-        run(["say", "-v", voice, "-r", str(rate), "-o", str(aiff), seg["narration"]])
+        if engine == "qwen3":
+            aiff = d / f"{seg['id']}.src.wav"
+        else:
+            speak(engine, voice, rate, seg["narration"], aiff)
         # 48k stereo so every clip concatenates without resampling surprises
         run(["ffmpeg", "-y", "-v", "error", "-i", str(aiff),
              "-ar", "48000", "-ac", "2", str(wav)])
         spoken = duration(wav)
-        clips.append(dict(id=seg["id"], page=seg["page"],
+        clips.append(dict(id=seg["id"], page=seg["page"], app=seg.get("app"),
                           secs=round(spoken + PAD_AFTER_SPEECH, 3),
                           spoken=round(spoken, 3),
                           actions=seg["actions"], popup=seg["popup"]))
@@ -185,7 +339,8 @@ def phase_narrate(voice, rate):
               f"{spoken + PAD_AFTER_SPEECH:5.2f}s")
 
     (work() / "clips.json").write_text(json.dumps(
-        dict(voice=voice, rate=rate, title=TITLE_SECS, end=END_SECS,
+        dict(voice={"personal": personal_voice, "qwen3": lambda: "Qwen3-TTS clone of Dave"}.get(engine, lambda: voice)(),
+             rate=rate, engine=engine, title=TITLE_SECS, end=END_SECS,
              clips=clips), indent=2))
     spk = sum(c["secs"] for c in clips)
     print(f"\n  {len(clips)} clips · {spk:.1f}s of narration "
@@ -349,34 +504,65 @@ def phase_capture():
 
     with sync_playwright() as pw:
         b = pw.chromium.launch(args=["--force-device-scale-factor=1"])
-        ctx = b.new_context(viewport={"width": W, "height": H},
-                            record_video_dir=str(vid),
-                            record_video_size={"width": W, "height": H})
+        ctx_kw = dict(viewport={"width": W, "height": H},
+                      record_video_dir=str(vid),
+                      record_video_size={"width": W, "height": H})
+        # A saved sign-in (see snowsight_login.py) lets an SSO-only app such as
+        # Snowsight be recorded unattended.
+        state = CFG.get("storage_state")
+        if state and pathlib.Path(state).exists():
+            ctx_kw["storage_state"] = str(state)
+        ctx = b.new_context(**ctx_kw)
         pg = ctx.new_page()
-        pg.goto(CFG["app"], wait_until="networkidle")
-        pg.wait_for_timeout(2500)
+        # Recording starts with the page; remember when, so the pre-roll trim is
+        # measured rather than inferred from the file length (see below).
+        t_rec = time.monotonic()
+
+        # Multi-app videos name an app per segment; single-app ones use CFG["app"].
+        apps = CFG.get("apps", {})
+        first_app = cl["clips"][0].get("app") if apps else None
+        if first_app:
+            # Snowsight never reaches networkidle (it long-polls), so wait on DOM load.
+            pg.goto(apps[first_app], wait_until="domcontentloaded")
+            pg.wait_for_timeout(6000)
+        else:
+            pg.goto(CFG["app"], wait_until="networkidle")
+            pg.wait_for_timeout(2500)
 
         # t0 marks video-time zero for the timeline. Everything before it is
         # page-load noise and gets trimmed off the front in assembly.
         t0 = time.monotonic()
         pg.wait_for_timeout(int(TITLE_SECS * 1000))
 
-        segments, cur_page = [], None
+        segments, cur_page, cur_app = [], None, first_app
         for s in cl["clips"]:
+            if apps and s.get("app") and s["app"] != cur_app:
+                pg.goto(apps[s["app"]], wait_until="domcontentloaded")
+                pg.wait_for_timeout(3500)
+                cur_app, cur_page = s["app"], None
             if s["page"] != cur_page:
                 # These apps navigate by button label, not by route — the same
                 # mechanism capture_shots.py uses. A reload would drop state.
-                pg.get_by_role("button", name=NAV[s["page"]], exact=True).click()
-                pg.wait_for_timeout(1800)
+                # Pages with no NAV entry (e.g. Snowsight) navigate via actions.
+                if NAV.get(s["page"]):
+                    pg.get_by_role("button", name=NAV[s["page"]], exact=True).click()
+                    pg.wait_for_timeout(700)    # just long enough for the page to paint
                 cur_page = s["page"]
 
-            for act in s["actions"]:
+            # Actions up to the last non-"wait" step must finish before the line
+            # starts (a click has to land before it is described). Trailing plain
+            # waits are dwell time for the viewer, so they run under the voice
+            # instead of as silence before it.
+            acts = s["actions"]
+            k = max((i + 1 for i, a in enumerate(acts) if a[0] != "wait"), default=0)
+            for act in acts[:k]:
                 do_action(pg, act)
 
             # The caption and the voice line begin now, whatever time the
             # navigation and clicks happened to consume.
             start = time.monotonic() - t0
-            pg.wait_for_timeout(int(s["secs"] * 1000))
+            dwell = sum(a[1] for a in acts[k:])
+            pg.wait_for_timeout(max(int(s["secs"] * 1000), dwell))
             segments.append({**s, "start": round(start, 3)})
             print(f"  {s['id']:18} {s['page']:12} starts {start:7.2f}s  "
                   f"holds {s['secs']:5.2f}s")
@@ -391,13 +577,17 @@ def phase_capture():
     shutil.move(str(pathlib.Path(path)), dst)
 
     raw = duration(dst)
-    preroll = round(raw - total, 3)      # page-load time before t0
+    # Pre-roll is the time from the start of recording to t0. It used to be taken
+    # as (file length - timeline length), but the recorder keeps running while the
+    # context closes, so that tail was counted as pre-roll and trimmed off the front:
+    # the picture then ran 4-8 s ahead of the voice for the whole video.
+    preroll = round(t0 - t_rec, 3)
     (work() / "timeline.json").write_text(json.dumps(
         dict(total=round(total, 3), preroll=max(0.0, preroll),
              title=cl["title"], end=cl["end"],
              voice=cl["voice"], rate=cl["rate"], segments=segments), indent=2))
     print(f"\n  captured {raw:.1f}s · timeline {total:.1f}s · "
-          f"pre-roll to trim {preroll:.1f}s")
+          f"pre-roll to trim {preroll:.1f}s · tail after timeline {raw - total - preroll:.1f}s")
     build_audio_track()
     return dst
 
@@ -410,7 +600,10 @@ def do_action(pg, act):
         pg.wait_for_timeout(700)
     elif kind == "click_button":
         pg.get_by_role("button", name=act[1], exact=False).first.click()
-        pg.wait_for_timeout(1100)
+        pg.wait_for_timeout(500)
+    elif kind == "click_last_button":         # ("click_last_button", exact name) — the last of several
+        pg.get_by_role("button", name=act[1], exact=True).last.click()
+        pg.wait_for_timeout(500)
     elif kind == "fill":
         pg.locator(act[1]).first.fill(act[2])
         pg.wait_for_timeout(400)
@@ -430,6 +623,24 @@ def do_action(pg, act):
         pg.wait_for_timeout(600)
     elif kind == "wait":
         pg.wait_for_timeout(act[1])
+    # ---- actions used by multi-app videos (e.g. Snowsight + two apps) ----
+    elif kind == "goto":                      # ("goto", url[, settle_ms])
+        pg.goto(act[1], wait_until="domcontentloaded")
+        pg.wait_for_timeout(act[2] if len(act) > 2 else 4000)
+    elif kind == "click_role":                # ("click_role", role, name)
+        pg.get_by_role(act[1], name=act[2], exact=False).first.click()
+        pg.wait_for_timeout(700)
+    elif kind == "type_slow":                 # ("type_slow", selector, text)
+        box = pg.locator(act[1]).first
+        box.click()
+        box.press_sequentially(act[2], delay=45)
+        pg.wait_for_timeout(400)
+    elif kind == "wait_for_text":             # ("wait_for_text", text, timeout_ms)
+        try:
+            pg.get_by_text(act[1], exact=False).first.wait_for(timeout=act[2] if len(act) > 2 else 90000)
+        except Exception:  # noqa: BLE001 - keep recording; the still check catches it
+            print(f"  ! wait_for_text timed out: {act[1]!r}")
+        pg.wait_for_timeout(800)
     else:
         raise ValueError(f"unknown action {act!r}")
 
@@ -510,6 +721,9 @@ def main():
     ap.add_argument("--domain", required=True, choices=sorted(DOMAINS))
     ap.add_argument("--voice", default="Samantha")
     ap.add_argument("--rate", type=int, default=168)
+    ap.add_argument("--engine", choices=["qwen3", "personal", "say"], default="qwen3",
+                    help="qwen3 = Dave's cloned voice (Qwen3-TTS); personal = macOS Personal Voice; "
+                         "say = a macOS system voice")
     ap.add_argument("--phase", choices=["narrate", "capture", "cards", "assemble"])
     a = ap.parse_args()
 
@@ -524,7 +738,7 @@ def main():
 
     for ph in phases:
         print(f"\n=== {a.domain} · {ph} ===")
-        {"narrate": lambda: phase_narrate(a.voice, a.rate),
+        {"narrate": lambda: phase_narrate(a.voice, a.rate, a.engine),
          "capture": phase_capture,
          "cards": phase_cards,
          "assemble": phase_assemble}[ph]()

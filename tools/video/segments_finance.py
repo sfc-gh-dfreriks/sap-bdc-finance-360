@@ -32,7 +32,7 @@ NAV = {
     "ap": "Accounts Payable",
     "ar": "Accounts Receivable",
     "period": "Period Analysis",
-    "products": "BDC Data Products",
+    "products": "BDC Sources & Lineage",
     "analyst": "Cortex Analyst",
 }
 

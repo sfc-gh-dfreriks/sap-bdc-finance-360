@@ -286,32 +286,82 @@ SEGMENTS = [
                     "travels, [[slnc 150]] and the page that explores it."),
          popup=dict(title="Management use cases", figure="10 questions",
                     body="Each needs facts from two or more apps.")),
-    dict(id="41_uc_ceo", page="usecases", actions=[W],
-         narration=("For the C E O and C F O: [[slnc 200]] which entity is weakest across finance, cash, people and "
-                    "delivery. [[slnc 300]] For the C P O: [[slnc 200]] which supplier is cheap to buy from but expensive "
-                    "to depend on."),
-         popup=dict(title="CEO / CFO · CPO", figure="entity health · supplier dependence",
-                    body="US Operations at 64.8% OTIF · Teledyne $322K spend vs $3.6M payables.")),
-    dict(id="42_uc_ops", page="usecases", actions=[("scroll", 520), W],
-         narration=("For the C O O: [[slnc 200]] what a supplier failure or a plant outage costs the enterprise, "
-                    "[[slnc 200]] and what a second source is worth. [[slnc 300]] Each one opens the scenario studio "
-                    "already set up."),
-         popup=dict(title="COO", figure="disruption → P&L",
-                    body="Supplier failure, dual sourcing, plant outage.")),
-    dict(id="43_uc_finance", page="usecases", actions=[("scroll", 520), W],
-         narration=("For credit and treasury: [[slnc 200]] which customers are both late to pay and badly served, "
-                    "[[slnc 200]] where a default would land, [[slnc 200]] and how much cash new terms release, and at "
-                    "whose expense."),
-         popup=dict(title="Credit · Treasury", figure="AR × delivery · terms × supply",
-                    body="Account health, customer default, payment terms.")),
-    dict(id="44_uc_people", page="usecases", actions=[("scroll", 520), W],
-         narration=("And for the C F O and C H R O: [[slnc 200]] what a currency move does to reported results, "
-                    "[[slnc 200]] and where a headcount change is safe, [[slnc 150]] or where it would compound a delivery "
-                    "problem."),
-         popup=dict(title="CFO · CHRO", figure="FX · workforce",
-                    body="Translation across Finance, Spend, People; headcount vs OTIF.")),
+    dict(id="41_uc_entity", page="usecases", actions=[W],
+         narration=("Use case one, [[slnc 150]] for the C E O and C F O. [[slnc 250]] Which legal entity is weakest across "
+                    "finance, cash, people and delivery? [[slnc 300]] The answer is U S Operations, [[slnc 150]] at sixty four "
+                    "point eight percent on time in full, [[slnc 150]] with three point six two million dollars of late-delivery cost. "
+                    "[[slnc 300]] Finance alone sees margin. [[slnc 150]] Supply Chain alone sees O T I F. [[slnc 250]] Only the "
+                    "ontology puts both on the same company, [[slnc 150]] so the conversation starts with the right entity."),
+         popup=dict(title="1 · Weakest legal entity", figure="US Operations · 64.8% OTIF",
+                    body="$3.62M late-delivery cost. Finance + Supply Chain on one company.")),
+    dict(id="42_uc_supplier", page="usecases", actions=[W],
+         narration=("Use case two, [[slnc 150]] for the chief procurement officer. [[slnc 250]] Which supplier is cheap to buy "
+                    "from, but expensive to depend on? [[slnc 300]] Teledyne DALSA. [[slnc 200]] Three hundred and twenty two thousand "
+                    "dollars of spend, [[slnc 150]] against three point five nine million dollars of open payables, [[slnc 150]] and "
+                    "parts inside most of our plants. [[slnc 300]] In Spend it looks small. [[slnc 200]] Joined to Working Capital "
+                    "and Supply Chain, [[slnc 150]] it is one of the most important relationships we have."),
+         popup=dict(title="2 · Cheap to buy, expensive to depend on", figure="Teledyne DALSA",
+                    body="$322K spend vs $3.59M open payables.")),
+    dict(id="43_uc_failure", page="usecases", actions=[("scroll", 480), W],
+         narration=("Use case three, [[slnc 150]] for the C O O. [[slnc 250]] If that supplier stops shipping for eight weeks, "
+                    "[[slnc 150]] who feels it, and how much? [[slnc 300]] Fifteen point eight nine million dollars of output lost, "
+                    "[[slnc 150]] reaching eight customers. [[slnc 300]] That figure walks the path from supplier, [[slnc 100]] to "
+                    "plant, [[slnc 100]] to customer, [[slnc 100]] to legal entity, [[slnc 250]] and it matches an independent S Q L "
+                    "check. [[slnc 250]] The button opens the scenario studio with this failure already loaded."),
+         popup=dict(title="3 · Supplier failure, 8 weeks", figure="$15.89M output lost",
+                    body="8 customers affected. Supplier → plant → customer → entity.")),
+    dict(id="44_uc_dual", page="usecases", actions=[W],
+         narration=("Use case four. [[slnc 250]] What is a second source worth, [[slnc 150]] before we pay for it? [[slnc 300]] "
+                    "The model runs the same Festo failure twice, [[slnc 150]] with and without fifty percent dual sourcing. "
+                    "[[slnc 300]] The difference is seventeen point five million dollars of output protected over eight weeks. "
+                    "[[slnc 300]] That is the number to set against the cost of qualifying a second supplier."),
+         popup=dict(title="4 · Value of a second source", figure="$17.50M protected",
+                    body="Festo failure, 8 weeks, with vs without 50% dual sourcing.")),
+    dict(id="45_uc_plant", page="usecases", actions=[("scroll", 480), W],
+         narration=("Use case five, [[slnc 150]] for the C O O and C F O together. [[slnc 250]] What does a four-week outage at "
+                    "our largest plant cost? [[slnc 300]] Fifteen point three five million dollars of output, [[slnc 200]] and U S "
+                    "Operations' cash conversion cycle moves from fifty four point nine, [[slnc 100]] to sixty point nine days. "
+                    "[[slnc 300]] An operations event, [[slnc 150]] expressed in P and L and working-capital language."),
+         popup=dict(title="5 · Plant outage, 4 weeks", figure="$15.35M output",
+                    body="US Operations CCC 54.9 → 60.9 days.")),
+    dict(id="46_uc_account", page="usecases", actions=[W],
+         narration=("Use case six, [[slnc 150]] for sales and credit. [[slnc 250]] Which customers are both late to pay, [[slnc 100]] "
+                    "and badly served? [[slnc 300]] S K Hynix. [[slnc 200]] Two point seven four million dollars overdue, [[slnc 150]] "
+                    "and seven hundred and seventy three thousand dollars of late-delivery cost. [[slnc 300]] Collections is chasing "
+                    "a customer that operations is failing. [[slnc 250]] Seeing both changes the call: [[slnc 150]] fix delivery "
+                    "before escalating the debt."),
+         popup=dict(title="6 · Late to pay and badly served", figure="SK Hynix",
+                    body="$2.74M overdue · $773K late-delivery cost.")),
+    dict(id="47_uc_default", page="usecases", actions=[("scroll", 480), W],
+         narration=("Use case seven, [[slnc 150]] for the C F O. [[slnc 250]] If that customer defaults, [[slnc 150]] where does the "
+                    "loss land? [[slnc 300]] A three point six nine million dollar write-off, [[slnc 150]] split across three legal "
+                    "entities. [[slnc 300]] The scenario also shows the order book and plant capacity a default would free up."),
+         popup=dict(title="7 · Customer default", figure="$3.69M write-off",
+                    body="Split across 3 legal entities.")),
+    dict(id="48_uc_terms", page="usecases", actions=[W],
+         narration=("Use case eight, [[slnc 150]] for the treasurer. [[slnc 250]] How much cash do longer payment terms release, "
+                    "[[slnc 150]] and which critical suppliers pay for it? [[slnc 300]] Two million dollars released, [[slnc 200]] but "
+                    "four critical suppliers squeezed. [[slnc 300]] Working Capital on its own would simply recommend it. [[slnc 250]] "
+                    "Supply Chain shows which suppliers might not survive it."),
+         popup=dict(title="8 · Longer payment terms", figure="$2.00M released",
+                    body="4 critical suppliers squeezed.")),
+    dict(id="49_uc_fx", page="usecases", actions=[("scroll", 480), W],
+         narration=("Use case nine, [[slnc 150]] for the C F O. [[slnc 250]] What does a ten percent weaker euro do? [[slnc 300]] "
+                    "Reported revenue falls by one point four five million dollars, [[slnc 200]] and payroll cost by five point five four "
+                    "million. [[slnc 300]] Three apps report the same European entity in dollars. [[slnc 250]] The ontology translates "
+                    "them once, [[slnc 150]] at the same planning rates."),
+         popup=dict(title="9 · EUR −10%", figure="revenue −$1.45M · payroll −$5.54M",
+                    body="One translation across Finance, Spend and People.")),
+    dict(id="4a_uc_workforce", page="usecases", actions=[W],
+         narration=("And use case ten, [[slnc 150]] for the C H R O and C O O. [[slnc 250]] Where is a headcount change safe? "
+                    "[[slnc 300]] Revenue per employee is close across the three entities: [[slnc 150]] thirty four thousand dollars in "
+                    "the U S, [[slnc 100]] thirty seven thousand in Japan, [[slnc 100]] thirty three thousand in Europe. [[slnc 300]] So "
+                    "cost alone does not decide it. [[slnc 250]] The ontology adds each entity's plant O T I F, [[slnc 150]] and a cut in "
+                    "U S Operations would land where delivery is already weakest."),
+         popup=dict(title="10 · Headcount decisions", figure="US $34K · Japan $37K · EU $33K",
+                    body="Revenue per employee, read with plant OTIF.")),
     dict(id="45_uc_run", page="usecases",
-         actions=[("scroll", -1400), W],
+         actions=[("scroll", -2400), W],
          narration=("Each card has its own Ask Cortex, [[slnc 200]] and a button that runs the scenario. [[slnc 250]] "
                     "Use cases are the way into the ontology for someone who does not want to learn it first."),
          popup=dict(title="Start from the question", figure="one click to the answer",
@@ -357,6 +407,15 @@ SEGMENTS = [
                     "double counted."),
          popup=dict(title="Reconciles with every app", figure="to the dollar",
                     body="Spend $4,658,904 · late cost $4,404,745 · headcount 1,292.")),
+    dict(id="61b_adopt", page="overview", actions=[("wait", 1500)],
+         narration=("How would an organisation adopt this? [[slnc 300]] Start with the crosswalk. [[slnc 200]] Agree the golden "
+                    "customers, suppliers, companies and departments, [[slnc 150]] and review the matches the rules could not settle. "
+                    "[[slnc 300]] Then pick two or three of the management questions, [[slnc 150]] and check the answers against what "
+                    "finance and operations already believe. [[slnc 300]] Where they disagree, [[slnc 150]] the ontology path shows "
+                    "exactly which app and which record the number came from. [[slnc 300]] New modules plug in the same way: "
+                    "[[slnc 200]] map the local records to golden I Ds, [[slnc 150]] and every existing question picks them up."),
+         popup=dict(title="Adopting the ontology", figure="crosswalk → questions → modules",
+                    body="Agree golden records, validate answers, then add modules.")),
     dict(id="62_close", page="overview", actions=[("wait", 1500)],
          narration=("So that is the enterprise ontology. [[slnc 250]] One identity for every company, customer and supplier. "
                     "[[slnc 200]] Scenarios that travel across all six apps. [[slnc 200]] Use cases that start from the "

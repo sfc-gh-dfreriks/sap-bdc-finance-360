@@ -545,7 +545,7 @@ def phase_capture():
                 # mechanism capture_shots.py uses. A reload would drop state.
                 # Pages with no NAV entry (e.g. Snowsight) navigate via actions.
                 if NAV.get(s["page"]):
-                    pg.get_by_role("button", name=NAV[s["page"]], exact=True).click()
+                    pg.get_by_role("button", name=NAV[s["page"]], exact=True).first.click()  # first = sidebar; page tabs may repeat the label
                     pg.wait_for_timeout(700)    # just long enough for the page to paint
                 cur_page = s["page"]
 

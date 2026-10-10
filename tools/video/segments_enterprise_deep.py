@@ -1,11 +1,11 @@
 """Script for the SAP Enterprise Ontology DEEP DIVE (~15-20 minutes).
 
-Eight chapters: the problem, the model, identity, the 360s, scenario modelling,
-management use cases, asking in plain language, and how it is deployed and governed.
+Nine chapters: the problem, the model, identity, the 360s, scenario modelling, impact, risk and
+mitigation, management use cases, asking in plain language, and how it is deployed, traced and governed.
 
 EVERY FIGURE is what the app shows, taken from /tmp/enterprise_facts.json and the
-scenario engine (client/src/lib/entScenario.ts) run on the exported data on
-2026-10-08, US account. Independent SQL check: supplier failure GS-002 x 8 weeks
+scenario engine (client/src/lib/entScenario.ts, entImpact.ts) run on the exported data on
+2026-10-09, US account. Independent SQL check: supplier failure GS-002 x 8 weeks
 = $15,893,854 output lost, the figure narrated below.
 
 HONESTY BEATS SCRIPTED IN: the demo crosswalk; the different scales of the demo
@@ -25,8 +25,13 @@ NAV = {
     "suppliers": "Supplier 360",
     "crosswalk": "Golden-Record Crosswalk",
     "graph": "Enterprise Graph",
+    "impact": "Impact Map",
+    "risk": "Risk Outcome",
+    "mitigation": "Mitigation & Recovery",
+    "lineage": "BDC Lineage",
     "ask": "Ask the Enterprise",
 }
+NEXT = ("click_role", "button", "Next")
 
 W = ("wait", 900)
 
@@ -74,11 +79,10 @@ SEGMENTS = [
     # ------------------------------------------------------------------ 2. the model
     dict(id="06_model", page="model", actions=[("wait", 1200)],
          narration=("Underneath is the model. [[slnc 250]] Thirty two classes and seventeen relations. [[slnc 300]] "
-                    "It is built on the Supply Chain ontology: [[slnc 200]] its abstract classes, party, org unit, "
-                    "facility, transaction, item, asset and product, [[slnc 200]] become the upper ontology for the whole "
-                    "enterprise."),
+                    "Eight abstract classes, [[slnc 150]] party, org unit, facility, transaction, item, asset and product, "
+                    "[[slnc 200]] are the shared vocabulary for the whole enterprise, [[slnc 150]] held in its own core."),
          popup=dict(title="Master ontology", figure="32 classes · 17 relations",
-                    body="Upper classes generalised from the Supply Chain ontology.")),
+                    body="Eight shared upper classes in the enterprise core.")),
     dict(id="07_model_modules", page="model", actions=[W],
          narration=("Every module adds only what it alone owns. [[slnc 250]] Finance adds cost centers, profit centers "
                     "and G L accounts. [[slnc 200]] Sales adds orders and opportunities. [[slnc 200]] People adds the "
@@ -279,6 +283,58 @@ SEGMENTS = [
          popup=dict(title="From scenario to decision", figure="minutes, not a day",
                     body="Propagation, per-app effect, recommended actions.")),
 
+    # ------------------------------------------------------------------ 5b. impact, risk and mitigation
+    dict(id="37_impact", page="impact",
+         actions=[("click_button", "Top-spend supplier fails (8 weeks)"), ("wait", 1800)],
+         narration=("The studio tells you what each app would see. [[slnc 250]] The impact map shows how it gets there. "
+                    "[[slnc 300]] The same Teledyne failure, [[slnc 150]] on a world map and a topology, [[slnc 150]] read left "
+                    "to right: [[slnc 150]] supplier, plants, customers, legal entities, and the apps that record it."),
+         popup=dict(title="Impact Map", figure="5 hops",
+                    body="The ripple through the ontology, on a map and a topology.")),
+    dict(id="38_impact_plants", page="impact", actions=[NEXT, ("wait", 1400)],
+         narration=("First contact. [[slnc 200]] Four plants lose part of their supply. [[slnc 250]] Timing comes from "
+                    "Supply Chain three sixty inventory: [[slnc 150]] San Jose holds fifteen days of stock, [[slnc 150]] so it "
+                    "runs out first, [[slnc 150]] Austin lasts forty two."),
+         popup=dict(title="Plants", figure="day 15",
+                    body="San Jose runs out first; Austin lasts 42 days.")),
+    dict(id="39_impact_customers", page="impact", actions=[NEXT, ("wait", 1400), NEXT, ("wait", 1400)],
+         narration=("Then eight customers miss deliveries, [[slnc 200]] S K Hynix most of all, [[slnc 150]] two point six "
+                    "million dollars. [[slnc 250]] And the plants roll up to all three legal entities, [[slnc 150]] so every "
+                    "company in the group feels it."),
+         popup=dict(title="Customers and entities", figure="8 customers · 3 entities",
+                    body="SK Hynix carries the largest exposure, $2.6M.")),
+    dict(id="39a_risk", page="risk", actions=[("wait", 1500)],
+         narration=("Risk outcome grades it. [[slnc 250]] Each app is measured against what it manages: [[slnc 200]] "
+                    "Supply Chain is critical, thirty nine percent of plant output in the window, [[slnc 200]] Sales and Spend "
+                    "are high, [[slnc 150]] Finance and Working Capital moderate."),
+         popup=dict(title="Risk Outcome", figure="Critical",
+                    body="Each app graded against its own base.")),
+    dict(id="39b_spof", page="risk", actions=[("scroll", 420), W],
+         narration=("It also names the single points of failure. [[slnc 250]] Dresden is the only plant that makes E beam "
+                    "review, [[slnc 150]] Singapore the only one for surface analysis. [[slnc 300]] Those are the parts no "
+                    "reroute can save."),
+         popup=dict(title="Single points of failure", figure="4 plants",
+                    body="Sole makers of a product line — no reroute can help.")),
+    dict(id="39c_mitigation", page="mitigation",
+         actions=[("click_button", "San Jose HQ down 4 weeks"), ("wait", 1800)],
+         narration=("Now recovery, [[slnc 150]] for a harder case: [[slnc 150]] San Jose down for four weeks, [[slnc 150]] "
+                    "fifteen point four million dollars at risk. [[slnc 300]] Every lever says whether it comes from data, "
+                    "[[slnc 150]] or is an assumption you set."),
+         popup=dict(title="Mitigation & Recovery", figure="$15.4M at risk",
+                    body="Levers marked 'from data' or 'your assumption'.")),
+    dict(id="39d_fix1", page="mitigation", actions=[NEXT, ("wait", 1500)],
+         narration=("Fix one: [[slnc 150]] move inspection systems to Austin, [[slnc 150]] which has made them before. "
+                    "[[slnc 200]] Five million dollars protected, [[slnc 150]] using every free hour Austin has."),
+         popup=dict(title="Reroute to Austin", figure="$5.0M protected",
+                    body="Only to a plant that has shipped the category, within its free hours.")),
+    dict(id="39e_result", page="mitigation", actions=[NEXT, ("wait", 1300), NEXT, ("wait", 1500)],
+         narration=("Fix two moves more to Dresden. [[slnc 250]] Together, forty four percent protected. [[slnc 300]] "
+                    "Eight point seven million stays exposed, [[slnc 150]] because both plants are now out of hours, "
+                    "[[slnc 150]] and the page warns they have no recovery room left. [[slnc 300]] That is the decision for "
+                    "the operations review: [[slnc 150]] buy capacity, or accept the gap."),
+         popup=dict(title="The result", figure="44% protected",
+                    body="$8.65M structural — capable plants are out of free hours.")),
+
     # ------------------------------------------------------------------ 6. management use cases
     dict(id="40_usecases", page="usecases", actions=[("wait", 1500)],
          narration=("Which brings us to use cases. [[slnc 250]] This page lists ten management questions that no single "
@@ -392,7 +448,19 @@ SEGMENTS = [
          popup=dict(title="Answer and SQL", figure="auditable",
                     body="Every answer shows the SQL behind it.")),
 
-    # ------------------------------------------------------------------ 8. deployed and governed
+    # ------------------------------------------------------------------ 8. deployed, traced and governed
+    dict(id="59_lineage", page="lineage", actions=[("wait", 1500)],
+         narration=("Where does all this come from? [[slnc 250]] The B D C lineage page traces six S A P B D C data "
+                    "products, [[slnc 150]] through the three sixty app that curates each one, [[slnc 150]] into the "
+                    "objects the ontology reads, [[slnc 200]] straight from Snowflake's own dependency graph."),
+         popup=dict(title="BDC Lineage", figure="6 data products",
+                    body="Data product → 360 app → enterprise ontology.")),
+    dict(id="59b_lineage_honest", page="lineage", actions=[("scroll", 900), W],
+         narration=("And it is honest about the rest. [[slnc 250]] C R M data in Sales comes from an export, [[slnc 150]] "
+                    "Supply Chain uses B D C shaped tables, [[slnc 150]] and demo enrichment is labelled as demo "
+                    "enrichment."),
+         popup=dict(title="Provenance on every source", figure="labelled",
+                    body="BDC product, BDC-shaped table, CRM export or demo enrichment.")),
     dict(id="60_regions", page="overview", actions=[("wait", 1200)],
          narration=("Finally, how it is built and run. [[slnc 250]] Everything lives in one Snowflake database, "
                     "[[slnc 200]] with a semantic view and a Cortex agent on top. [[slnc 300]] It is deployed in the U S, "
@@ -418,7 +486,7 @@ SEGMENTS = [
                     body="Agree golden records, validate answers, then add modules.")),
     dict(id="62_close", page="overview", actions=[("wait", 1500)],
          narration=("So that is the enterprise ontology. [[slnc 250]] One identity for every company, customer and supplier. "
-                    "[[slnc 200]] Scenarios that travel across all six apps. [[slnc 200]] Use cases that start from the "
+                    "[[slnc 200]] Scenarios you can map, grade and mitigate across all six apps. [[slnc 200]] Use cases that start from the "
                     "question. [[slnc 200]] And Cortex reasoning over the evidence. [[slnc 400]] It is public, [[slnc 150]] "
                     "with no login, [[slnc 150]] at the address on screen."),
          popup=dict(title="SAP Enterprise Ontology", figure="try it",

@@ -4,8 +4,9 @@ One entry per beat: narration (sets the segment's length), caption card, and the
 actions that put the app in the right state. Narration is written to be spoken —
 initialisms spaced, figures as words, `[[slnc n]]` pauses.
 
-EVERY FIGURE HERE IS WHAT THE APP SHOWS, checked against /tmp/enterprise_facts.json
-(tools/enterprise_facts.py in the enterprise-ontology repo) on 2026-10-08, US account.
+EVERY FIGURE HERE IS WHAT THE APP SHOWS, checked against /tmp/enterprise_facts.json and
+/tmp/enterprise_scenarios.json (tools/enterprise_facts.py, tools/capture_enterprise.py in the
+enterprise-ontology repo) on 2026-10-09, US account.
 
 HONESTY BEATS SCRIPTED IN: golden records come from a demo crosswalk (the six apps
 share no keys), and money is USD at planning rates.
@@ -18,8 +19,13 @@ NAV = {
     "suppliers": "Supplier 360",
     "crosswalk": "Golden-Record Crosswalk",
     "graph": "Enterprise Graph",
+    "impact": "Impact Map",
+    "mitigation": "Mitigation & Recovery",
+    "lineage": "BDC Lineage",
     "ask": "Ask the Enterprise",
 }
+
+NEXT = ("click_role", "button", "Next")
 
 SEGMENTS = [
     dict(
@@ -48,11 +54,11 @@ SEGMENTS = [
         id="02_model", page="model", actions=[("wait", 1200)],
         narration=(
             "Underneath is one model. [[slnc 250]] Thirty two classes and seventeen relations. "
-            "[[slnc 300]] The upper classes, party, org unit, facility, transaction, come from the "
-            "Supply Chain ontology. [[slnc 300]] Each app is a module that adds only what it alone owns."
+            "[[slnc 300]] Shared upper classes, party, org unit, facility, transaction, sit in the "
+            "enterprise core. [[slnc 300]] Each app is a module that adds only what it alone owns."
         ),
         popup=dict(title="Master ontology", figure="32 classes · 17 relations",
-                   body="Supply Chain upper classes; one module per 360 app."),
+                   body="Shared upper classes in the core; one module per 360 app."),
     ),
     dict(
         id="03_supplier", page="suppliers", actions=[("wait", 1200)],
@@ -105,6 +111,38 @@ SEGMENTS = [
         ),
         popup=dict(title="Enterprise knowledge graph", figure="1,928 nodes",
                    body="3,790 edges, 0 dangling. Deployed identically in US, EU and APAC."),
+    ),
+    dict(
+        id="07a_impact", page="impact", actions=[("wait", 1500), NEXT, ("wait", 1600), NEXT, ("wait", 1600)],
+        narration=(
+            "Now break something. [[slnc 250]] Teledyne stops shipping for eight weeks. [[slnc 300]] The impact map "
+            "follows the shock through the ontology: [[slnc 200]] four plants lose supply, and San Jose runs out of "
+            "stock first, on day fifteen. [[slnc 250]] Then eight customers, three legal entities, and five apps, "
+            "[[slnc 150]] with fifteen point nine million dollars of output at risk."
+        ),
+        popup=dict(title="Impact Map", figure="$15.9M at risk",
+                   body="Supplier → plants → customers → legal entities → apps, hop by hop."),
+    ),
+    dict(
+        id="07b_mitigation", page="mitigation", actions=[("wait", 1500), NEXT, ("wait", 1400), NEXT, ("wait", 1400)],
+        narration=(
+            "And then recover. [[slnc 250]] Building from stock already held, plant by plant, protects eight point "
+            "eight million dollars, [[slnc 150]] fifty five percent. [[slnc 300]] The rest stays exposed, and the "
+            "page says why: [[slnc 200]] the plants that could take the work need the same supplier, [[slnc 150]] "
+            "and two product lines have no other maker."
+        ),
+        popup=dict(title="Mitigation & Recovery", figure="55% protected",
+                   body="Levers from Supply Chain 360 data; anything assumed is labelled."),
+    ),
+    dict(
+        id="07c_lineage", page="lineage", actions=[("wait", 1500), ("scroll", 520), ("wait", 900)],
+        narration=(
+            "Every number traces back. [[slnc 250]] Six S A P B D C data products, through the three sixty app that "
+            "curates each one, into the ontology, [[slnc 200]] read from Snowflake's own lineage, [[slnc 150]] "
+            "with demo enrichment labelled as such."
+        ),
+        popup=dict(title="BDC Lineage", figure="6 data products",
+                   body="Data product → 360 app → enterprise ontology."),
     ),
     dict(
         id="08_ask", page="ask",

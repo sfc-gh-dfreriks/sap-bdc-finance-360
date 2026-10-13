@@ -23,6 +23,14 @@ glosses over its own limits is worse than useless — someone will find them liv
   * Performance reviews stop at review year 2025 while everything else runs into
     2026 — there is no single "as of" date for this dataset.
 
+THE ONBOARDING BEATS (07a-07f) run the live HR onboarding scenario end to end. Hire figures
+are from the app on 2026-10-13 (Senior Engineer, US Operations, start = today + 17 days):
+36 peer records, $127,200 offer, grade 5, 30% benefits load, $636 loaded cost per day; the
+engineering laptop is backordered 42 days at the preferred reseller -> 17 idle workdays.
+The laptop offers come from a LIVE web search and change every run, so the narration names
+no vendor or price. Equipment, supplier and benefits data are demo enrichment, and the
+SuccessFactors write-back is simulated (OData payload stored in Snowflake) - both said aloud.
+
 Actions run at the start of a segment; the page then holds for whatever narration
 time remains.
 """
@@ -42,6 +50,7 @@ NAV = {
     "employees": "Employees",
     "lineage": "BDC Sources & Lineage",
     "analyst": "Ask the Agent",
+    "onboarding": "Onboarding Scenario",
 }
 
 SEGMENTS = [
@@ -158,6 +167,98 @@ SEGMENTS = [
         popup=dict(title="Recruiting", figure="62 open reqs",
                    body="160 requisitions: 80 filled, 62 open, 18 cancelled — "
                         "read against the 196 critical positions."),
+    ),
+
+    # ------------------------------------------------------------ onboarding scenario (live)
+    dict(
+        id="07a_onb_hire", page="onboarding", actions=[("wait_for_text", "Check onboarding equipment", 30000), ("wait", 800)],
+        narration=(
+            "Now a scenario that uses this data instead of just reporting on it. "
+            "[[slnc 350]] A new hire — a senior engineer joining U S Operations. "
+            "[[slnc 300]] The offer isn't typed in. It's derived from thirty six "
+            "people already in that role: one hundred and twenty seven thousand "
+            "dollars, pay grade five. [[slnc 350]] Add benefits, and every working "
+            "day this person sits idle costs about six hundred and thirty six dollars."
+        ),
+        popup=dict(title="HR onboarding, end to end", figure="$636 / idle day",
+                   body="Offer derived from 36 peer records in SuccessFactors: $127,200, "
+                        "grade 5, 30% benefits load."),
+    ),
+    dict(
+        id="07b_onb_kit", page="onboarding",
+        actions=[("click_button", "Check onboarding equipment"), ("wait_for_text", "Supply-chain disruption", 30000),
+                 ("scroll_to", "2. Equipment availability"), ("wait", 600)],
+        narration=(
+            "Next, the equipment kit for their start date. [[slnc 300]] Badge, "
+            "monitor, dock — all in stock. [[slnc 250]] The laptop isn't. The "
+            "preferred reseller has it on backorder, forty two days out. "
+            "[[slnc 400]] That's seventeen working days without a machine — close to "
+            "eleven thousand dollars of paid, idle time before they've written a "
+            "line of code."
+        ),
+        popup=dict(title="The disruption", figure="17 idle workdays",
+                   body="Engineering laptop backordered 42 days at the preferred "
+                        "channel ≈ $10.8K of idle loaded cost."),
+    ),
+    dict(
+        id="07c_onb_search", page="onboarding",
+        actions=[("click_button", "Search the web for alternatives"), ("wait", 600)],
+        narration=(
+            "So the app goes looking. [[slnc 300]] It runs a live web search for the "
+            "same spec, reads the retailer pages that come back, and Cortex A I "
+            "extracts real offers from them — vendor, model, price and ship time. "
+            "[[slnc 400]] One rule matters here. If a price isn't on the page it "
+            "cites, the offer is dropped. [[slnc 300]] Nothing is invented, and "
+            "every option links to its source."
+        ),
+        popup=dict(title="Live alternative sourcing", figure="web search + Cortex",
+                   body="Offers extracted from the cited pages by AI_COMPLETE. "
+                        "No price on the page, no offer."),
+    ),
+    dict(
+        id="07d_onb_results", page="onboarding",
+        actions=[("wait_for_text", "3. Cost / time analysis", 150000), ("scroll_to", "3. Cost / time analysis"), ("wait", 800)],
+        narration=(
+            "Here's the comparison. [[slnc 300]] Each option is scored on total "
+            "impact — the hardware, plus the idle days it would still cost. "
+            "[[slnc 350]] A machine that ships in two days usually costs less "
+            "than the preferred laptop once you count the waiting. [[slnc 300]] "
+            "Spec match is flagged too, so a cheaper but weaker machine doesn't "
+            "slip through."
+        ),
+        popup=dict(title="Cost against time", figure="total impact",
+                   body="Hardware cost + idle workdays × loaded daily cost. "
+                        "Results are live, so they differ run to run."),
+    ),
+    dict(
+        id="07e_onb_pick", page="onboarding",
+        actions=[("click_css", "tbody tr.cursor-pointer:has-text(\"Reseller in stock\")"), ("wait", 900)],
+        narration=(
+            "Pick one, [[slnc 250]] and the chart shows where it sits against the "
+            "preferred channel — lead time across, cost up the side. [[slnc 350]] "
+            "The decision is one an H R coordinator can make in a minute, with the "
+            "reasoning on screen."
+        ),
+        popup=dict(title="Choose a substitute", figure="one click",
+                   body="The selected offer is plotted against the preferred "
+                        "channel; net benefit is shown per option."),
+    ),
+    dict(
+        id="07f_onb_writeback", page="onboarding",
+        actions=[("click_button", "Substitute & write back to SuccessFactors"), ("wait_for_text", "4. Written back", 60000),
+                 ("scroll_to", "4. Written back"), ("wait", 800)],
+        narration=(
+            "And it closes the loop. [[slnc 300]] The hire, the compensation record "
+            "and the equipment request go back to SuccessFactors, with the sourcing "
+            "decision kept for audit. [[slnc 400]] Two honest notes. In this demo "
+            "the write back is simulated — the OData payload is stored in Snowflake "
+            "rather than posted. And the inventory, supplier and benefits data is "
+            "demo enrichment, not S A P."
+        ),
+        popup=dict(title="Written back (simulated)", figure="hire + kit + decision",
+                   body="EmpJob / EmpCompensation / equipment request payloads stored "
+                        "in Snowflake with the sourcing decision. Inventory and "
+                        "supplier data are demo enrichment."),
     ),
 
     # ------------------------------------------------------------ the platform

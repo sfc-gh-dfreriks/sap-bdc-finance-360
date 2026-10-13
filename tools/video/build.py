@@ -635,6 +635,12 @@ def do_action(pg, act):
         box.click()
         box.press_sequentially(act[2], delay=45)
         pg.wait_for_timeout(400)
+    elif kind == "click_css":                 # ("click_css", selector) — e.g. the first row of a result table
+        pg.locator(act[1]).first.click()
+        pg.wait_for_timeout(600)
+    elif kind == "scroll_to":                 # ("scroll_to", text) — bring a heading or banner to the top
+        pg.get_by_text(act[1], exact=False).first.evaluate("e => e.scrollIntoView({block: 'start', behavior: 'smooth'})")
+        pg.wait_for_timeout(900)
     elif kind == "wait_for_text":             # ("wait_for_text", text, timeout_ms)
         try:
             pg.get_by_text(act[1], exact=False).first.wait_for(timeout=act[2] if len(act) > 2 else 90000)

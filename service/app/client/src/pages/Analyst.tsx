@@ -3,7 +3,10 @@ import ReactMarkdown from 'react-markdown';
 import { Send, Trash2, ChevronDown, ChevronRight, Table as TableIcon, BarChart3, Maximize2, X } from 'lucide-react';
 import ReactECharts from '@/components/Chart';
 
-const BASE = '/api';
+// Live: same-origin Express API. Static/public build: a serverless agent worker.
+const BASE = import.meta.env.VITE_STATIC === '1'
+  ? (import.meta.env.VITE_AGENT_URL ?? '').replace(/\/$/, '')
+  : '/api';
 
 const SF_BLUE = '#058DC7';
 const PALETTE = ['#058DC7', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#14B8A6', '#F97316'];

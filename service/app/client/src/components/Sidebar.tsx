@@ -70,7 +70,7 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
       {/* Logo */}
       <div className="flex flex-col gap-1.5 border-b border-white/10 px-5 py-4">
         <img
-          src="/snowflake_logo.svg"
+          src={`${import.meta.env.BASE_URL}snowflake_logo.svg`}
           alt="Snowflake"
           className="h-7 w-auto self-start"
         />

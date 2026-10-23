@@ -193,3 +193,17 @@ BEGIN
   RETURN 'bundled data OK — DT_AR_AGING=' || :ar_rows || ' rows, JOURNALENTRY=' || :je_rows || ' rows';
 END; $$;
 GRANT USAGE ON PROCEDURE core.selftest() TO APPLICATION ROLE app_public;
+
+-- Ask Cortex probe: calls AI_COMPLETE as the application (the same identity the
+-- container uses). If this fails, grant Cortex to the app:
+--   GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO APPLICATION <app name>;
+CREATE OR REPLACE PROCEDURE core.cortex_selftest()
+  RETURNS STRING LANGUAGE SQL EXECUTE AS OWNER
+AS $$ DECLARE r STRING;
+BEGIN
+  SELECT AI_COMPLETE('claude-sonnet-4-5', 'Reply with exactly: Cortex OK') INTO :r;
+  RETURN 'Ask Cortex available: ' || :r;
+EXCEPTION WHEN OTHER THEN
+  RETURN 'Ask Cortex NOT available in this installation: ' || SQLERRM;
+END; $$;
+GRANT USAGE ON PROCEDURE core.cortex_selftest() TO APPLICATION ROLE app_public;

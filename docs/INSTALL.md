@@ -131,6 +131,13 @@ the app the Cortex role (done automatically by `deploy_native_app.py`):
 GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO APPLICATION FINANCE_360_APP;
 ```
 
+The same grant lets the **Ask Cortex** page and the per-page "Ask Cortex about
+<page>" buttons call `AI_COMPLETE` (model `claude-sonnet-4-5`; set `CORTEX_MODEL`
+in the service spec to override, and check the model is available in the region).
+Check it with `CALL FINANCE_360_APP.CORE.CORTEX_SELFTEST();`. If Cortex is not
+reachable the UI reports "Ask Cortex is not available in this installation" with
+the fix, rather than failing.
+
 ## Teardown
 
 ```sql

@@ -202,6 +202,20 @@ capture script waiting for a canvas on it waits forever.
 
 ---
 
+## Ask Cortex (page analysis)
+
+Separate from the Analyst page, which is unchanged. **Ask Cortex** is the first
+sidebar item, and each data page has an "Ask Cortex about <page>" button with two
+suggested questions. The server (`routes/askCortex.ts`) runs a fixed set of SQL
+"facts" for that page over the same tables the page uses (all company codes and
+years, sidebar filters not applied), then calls `AI_COMPLETE` (default
+`claude-sonnet-4-5`, `CORTEX_MODEL` overrides) with an instruction to cite only those
+facts. The call runs as a background job: `POST /api/ask-cortex` returns an id and
+the client polls `GET /api/ask-cortex/:id` every 2 s. Amounts are in transaction
+currency and are not converted. In the Native App the facts read `APP_DATA.*`;
+`CALL <app>.CORE.CORTEX_SELFTEST()` confirms Cortex is reachable. The public build
+shows answers baked at export time.
+
 ## Honest summary for a customer conversation
 
 What to claim:

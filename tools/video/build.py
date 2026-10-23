@@ -1,0 +1,754 @@
+#!/usr/bin/env python3
+"""Build a narrated walkthrough video for a SAP BDC 360 application.
+
+One builder, three domains. `--domain finance`, `--domain sales` and
+`--domain people` differ only in their DOMAINS entry and their segment script; the
+pipeline itself is identical, so a fix to timing or compositing lands for all at
+once.
+
+Four phases, in dependency order:
+
+  1. narrate  synthesise per-segment audio and measure its real duration
+  2. capture  drive the live app with Playwright, dwelling per measured duration
+  3. cards    render the caption PNGs, now that real start offsets are known
+  4. assemble ffmpeg: video + narration + overlays -> mp4
+
+Timing is audio-led. The narration is produced first and the browser then holds
+each step for exactly as long as its line takes to speak. Fixing the visuals first
+and stretching audio to fit drifts within a minute and cannot be recovered.
+
+NOTE ON PHASE ORDER: the supply-chain original listed `cards` before `capture`,
+but `phase_cards` reads timeline.json and only `phase_capture` writes it, so a
+clean run crashed. Capture runs second here. Do not "restore" the old order.
+
+Usage:
+    python3 tools/video/build.py --domain finance
+    python3 tools/video/build.py --domain sales --voice Daniel
+    python3 tools/video/build.py --domain finance --phase assemble
+"""
+
+import argparse
+import importlib
+import json
+import pathlib
+import re
+import shutil
+import subprocess
+import sys
+
+sys.path.insert(0, str(pathlib.Path(__file__).parent))
+
+HOME = pathlib.Path.home()
+
+DOMAINS = {
+    "finance": dict(
+        segments="segments_finance",
+        app="http://localhost:5175/",
+        work=pathlib.Path("/tmp/finance_video"),
+        out=HOME / "Documents" / "SAP" / "SAP_Finance_360_Walkthrough.mp4",
+        title="SAP Finance 360",
+        subtitle="Closing the books on SAP data that never moved",
+        links=[
+            ("Live application",
+             "erzht4-sfsenorthamerica-dfreriks-aws1-w2.snowflakecomputing.app"),
+            ("Source and documentation",
+             "github.com/sfc-gh-dfreriks/sap-bdc-finance-360"),
+            ("Built on",
+             "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
+        ],
+    ),
+    "people": dict(
+        segments="segments_people",
+        app="http://localhost:5180/",
+        work=pathlib.Path("/tmp/people_video"),
+        out=HOME / "Documents" / "SAP" / "SAP_People_360_Walkthrough.mp4",
+        title="SAP People 360",
+        subtitle="Workforce Analytics on SAP BDC Data\nusing BDC Connect Zero Copy",
+        links=[
+            ("Live application",
+             "irzht4-sfsenorthamerica-dfreriks-aws1-w2.snowflakecomputing.app"),
+            ("Source and documentation",
+             "github.com/sfc-gh-dfreriks/sap-bdc-people-360"),
+            ("Built on",
+             "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
+        ],
+    ),
+    "sales": dict(
+        segments="segments_sales",
+        app="http://localhost:5176/",
+        work=pathlib.Path("/tmp/sales_video"),
+        out=HOME / "Documents" / "SAP" / "SAP_Sales_360_Walkthrough.mp4",
+        title="SAP Sales 360",
+        subtitle="Pipeline, quota and forecast on live SAP data",
+        links=[
+            ("Live application",
+             "mrzht4-sfsenorthamerica-dfreriks-aws1-w2.snowflakecomputing.app"),
+            ("Source and documentation",
+             "github.com/sfc-gh-dfreriks/sap-bdc-sales-360"),
+            ("Built on",
+             "SAP BDC data products · Snowflake · Cortex Agent"),
+        ],
+    ),
+    "spend": dict(
+        segments="segments_spend",
+        app="http://localhost:5181/",
+        work=pathlib.Path("/tmp/spend_video"),
+        out=HOME / "Documents" / "SAP" / "SAP_Spend_360_Walkthrough.mp4",
+        title="SAP Spend 360",
+        subtitle="Spend Intelligence on SAP BDC Data\nusing BDC Connect Zero Copy",
+        links=[
+            ("Live application",
+             "aszht4-sfsenorthamerica-dfreriks-aws1-w2.snowflakecomputing.app"),
+            ("Source and documentation",
+             "github.com/sfc-gh-dfreriks/sap-bdc-spend-360"),
+            ("Built on",
+             "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
+        ],
+    ),
+    "working_capital": dict(
+        segments="segments_working_capital",
+        app="http://localhost:5185/",
+        work=pathlib.Path("/tmp/wc_video"),
+        out=HOME / "Documents" / "SAP" / "Working_Capital_360_Presales_Kit" / "SAP_Working_Capital_360_Walkthrough.mp4",
+        title="SAP Working Capital 360",
+        subtitle="Working Capital Insights on SAP BDC Data\nusing BDC Connect Zero Copy",
+        tagline="real BDC journal lines, with flagged demo enrichment",
+        links=[
+            ("Live application",
+             "eszht4-sfsenorthamerica-dfreriks-aws1-w2.snowflakecomputing.app"),
+            ("Public demo",
+             "sfc-gh-dfreriks.github.io/working-capital-360-public"),
+            ("Built on",
+             "SAP BDC zero-copy shares · Snowflake · Cortex Analyst"),
+        ],
+    ),
+    "enterprise": dict(
+        segments="segments_enterprise",
+        app="http://localhost:5186/",
+        work=pathlib.Path("/tmp/enterprise_video"),
+        out=HOME / "Documents" / "SAP" / "Enterprise_Ontology_Presales_Kit" / "SAP_Enterprise_Ontology_Walkthrough.mp4",
+        title="SAP Enterprise Ontology",
+        subtitle="One ontology across six SAP BDC 360 apps",
+        tagline="golden records from a labelled demo crosswalk",
+        links=[
+            ("Public demo", "sfc-gh-dfreriks.github.io/enterprise-ontology"),
+            ("Source and documentation", "github.com/sfc-gh-dfreriks/enterprise-ontology"),
+            ("Built on", "SAP BDC zero-copy shares · Snowflake · Cortex"),
+        ],
+    ),
+    "enterprise_deep": dict(
+        segments="segments_enterprise_deep",
+        app="http://localhost:5186/",
+        work=pathlib.Path("/tmp/enterprise_deep_video"),
+        out=HOME / "Documents" / "SAP" / "Enterprise_Ontology_Presales_Kit" / "SAP_Enterprise_Ontology_Deep_Dive.mp4",
+        title="SAP Enterprise Ontology — Deep Dive",
+        subtitle="Managing the organisation across six SAP BDC 360 apps",
+        tagline="scenario modelling · management use cases · Cortex",
+        links=[
+            ("Public demo", "sfc-gh-dfreriks.github.io/enterprise-ontology"),
+            ("Source and documentation", "github.com/sfc-gh-dfreriks/enterprise-ontology"),
+            ("Built on", "SAP BDC zero-copy shares · Snowflake · Cortex"),
+        ],
+    ),
+    "supply_chain_demo": dict(
+        segments="segments_supply_chain_demo",
+        app="http://localhost:5174/",
+        # One video across three surfaces; each segment names its app.
+        apps={
+            "snowsight": "https://app.snowflake.com/sfsenorthamerica/dfreriks_aws1_w2/",
+            "sc360": "http://localhost:5174/",
+            "ontology": "http://localhost:5179/",
+        },
+        storage_state=HOME / ".snowflake" / "video" / "snowsight_state.json",
+        work=pathlib.Path("/tmp/sc_demo_video"),
+        out=HOME / "Documents" / "SAP" / "SAP_Supply_Chain_360_Demo.mp4",
+        title="SAP Supply Chain 360 on SAP BDC",
+        subtitle="Zero-copy SAP data to\nAI-driven supply chain decisions",
+        tagline="Snowsight, Supply Chain 360 and the Supply Chain Ontology",
+        links=[
+            ("Zero-copy connection",
+             "Snowsight · Ingestion · Zero-Copy · SAP_BDC_CONNECT_ZC"),
+            ("Supply chain apps",
+             "Supply Chain 360 · Supply Chain Ontology (Scenario Studio)"),
+            ("Built on",
+             "SAP BDC Connect · Snowflake · Cortex Analyst · knowledge graph"),
+        ],
+    ),
+}
+
+W, H = 1600, 1000              # browser viewport
+BAND = 132                     # caption band drawn BELOW the app, not over it
+VH = H + BAND                  # final canvas height
+FPS = 25
+
+# Brand, matching the Word and PowerPoint deliverables and the apps.
+NAVY = (27, 58, 87)
+BLUE = (41, 181, 232)
+WHITE = (255, 255, 255)
+DIM = (176, 196, 212)
+
+TITLE_SECS = 5.0
+END_SECS = 5.5
+PAD_AFTER_SPEECH = 0.55        # a beat of silence after each line
+
+CFG = {}                       # populated by main()
+NAV = {}
+SEGMENTS = []
+
+
+def work():
+    return CFG["work"]
+
+
+def run(cmd, **kw):
+    return subprocess.run(cmd, check=True, capture_output=True, text=True, **kw)
+
+
+def duration(path):
+    out = run(["ffprobe", "-v", "error", "-show_entries", "format=duration",
+               "-of", "csv=p=0", str(path)]).stdout.strip()
+    return float(out)
+
+
+# ------------------------------------------------------------------- 1. narrate
+
+PVSAY_SRC = pathlib.Path(__file__).resolve().parent.parent / "pvsay" / "pvsay.swift"
+PVSAY_BIN = HOME / ".snowflake" / "video" / "pvsay"
+
+
+def pvsay():
+    """Compile the Personal Voice helper on first use (or when its source changes)."""
+    if not PVSAY_BIN.exists() or PVSAY_BIN.stat().st_mtime < PVSAY_SRC.stat().st_mtime:
+        PVSAY_BIN.parent.mkdir(parents=True, exist_ok=True)
+        run(["swiftc", "-O", str(PVSAY_SRC), "-o", str(PVSAY_BIN)])
+    return str(PVSAY_BIN)
+
+
+_PERSONAL = None
+
+
+def personal_voice():
+    """Name of the first macOS Personal Voice the helper can see (cached)."""
+    global _PERSONAL
+    if _PERSONAL is None:
+        r = subprocess.run([pvsay(), "--status"], capture_output=True, text=True, timeout=120)
+        names = [ln.split(":", 1)[1].split("\t")[0].strip() for ln in r.stdout.splitlines()
+                 if ln.startswith("personal voice:")]
+        if not names:
+            sys.exit("No usable Personal Voice: " + (r.stdout + r.stderr).strip() + "\n"
+                     "Create one in System Settings ▸ Accessibility ▸ Personal Voice and allow apps "
+                     "to request it, or pass --engine say.")
+        _PERSONAL = names[0]
+    return _PERSONAL
+
+
+# Cloned-voice engine (Qwen3-TTS via mlx-audio, run in its own venv).
+VOICECLONE = HOME / ".snowflake" / "video" / "voiceclone"
+QWEN_SAY = pathlib.Path(__file__).resolve().parent.parent / "voiceclone" / "qwen_say.py"
+REF_AUDIO = VOICECLONE / "ref" / "dave.wav"
+REF_TEXT = HOME / "Desktop" / "voice_samples" / "dave_reference.txt"
+
+
+def qwen_batch(items):
+    """Voice [(text, dest_wav)] in Dave's cloned voice with one model load."""
+    for f in (VOICECLONE / ".venv" / "bin" / "python", REF_AUDIO, REF_TEXT):
+        if not f.exists():
+            sys.exit(f"qwen3 engine needs {f} — see tools/voiceclone/qwen_say.py")
+    jobs = work() / "qwen_jobs.json"
+    jobs.write_text(json.dumps(dict(ref_audio=str(REF_AUDIO), ref_text=REF_TEXT.read_text().strip(),
+                                    jobs=[dict(text=t, out=str(d)) for t, d in items])))
+    r = subprocess.run([str(VOICECLONE / ".venv" / "bin" / "python"), str(QWEN_SAY), str(jobs)],
+                       capture_output=True, text=True)
+    if r.returncode:
+        sys.exit("Qwen3-TTS failed:\n" + r.stderr[-2000:])
+
+
+SLNC = re.compile(r"\[\[slnc (\d+)\]\]")
+
+
+def speak(engine, voice, rate, text, dest):
+    """Write `text` to an audio file with the chosen engine.
+
+    personal — your macOS Personal Voice (default)
+    say      — a named macOS system voice
+    Both render through `say`: on macOS 26 AVSpeechSynthesizer.write() returns no
+    buffers for Personal Voices, while `say` renders them to file correctly.
+
+    Personal Voices ignore `[[slnc N]]` pause markers (system voices honour them),
+    so the line is split at each marker, the pieces are voiced separately, and
+    exactly N ms of silence is spliced between them.
+    """
+    name = personal_voice() if engine == "personal" else voice
+    if engine != "personal" or not SLNC.search(text):
+        run(["say", "-v", name, "-r", str(rate), "-o", str(dest), text])
+        return
+    tmp = dest.parent / f"_{dest.stem}"
+    tmp.mkdir(exist_ok=True)
+    parts, pause = [], 0
+    for k, chunk in enumerate(SLNC.split(text)):
+        if k % 2:                                   # a captured pause length (ms)
+            pause += int(chunk)
+            continue
+        if not chunk.strip():
+            continue
+        if pause and parts:
+            sil = tmp / f"s{len(parts)}.aiff"
+            run(["ffmpeg", "-y", "-v", "error", "-f", "lavfi", "-i",
+                 "anullsrc=r=22050:cl=mono", "-t", f"{pause / 1000:.3f}", "-c:a", "pcm_s16be", str(sil)])
+            parts.append(sil)
+        pause = 0
+        f = tmp / f"p{len(parts)}.aiff"
+        run(["say", "-v", name, "-r", str(rate), "-o", str(f), chunk.strip()])
+        parts.append(f)
+    lst = tmp / "list.txt"
+    lst.write_text("".join(f"file '{x}'\n" for x in parts))
+    run(["ffmpeg", "-y", "-v", "error", "-f", "concat", "-safe", "0", "-i", str(lst),
+         "-c:a", "pcm_s16be", str(dest)])
+    shutil.rmtree(tmp, ignore_errors=True)
+
+
+def phase_narrate(voice, rate, engine="say"):
+    """Synthesise each line and measure it.
+
+    Start offsets are deliberately NOT computed here. They come from the capture,
+    because page loads and navigation cost real time that cannot be predicted;
+    guessing it put the captions seconds early by the end of the original video.
+    """
+    d = work() / "audio"
+    d.mkdir(parents=True, exist_ok=True)
+    clips = []
+    if engine == "qwen3":
+        print("  voicing all segments with Qwen3-TTS (cloned voice)…")
+        qwen_batch([(seg["narration"], d / f"{seg['id']}.src.wav") for seg in SEGMENTS])
+    for seg in SEGMENTS:
+        aiff = d / f"{seg['id']}.aiff"
+        wav = d / f"{seg['id']}.wav"
+        if engine == "qwen3":
+            aiff = d / f"{seg['id']}.src.wav"
+        else:
+            speak(engine, voice, rate, seg["narration"], aiff)
+        # 48k stereo so every clip concatenates without resampling surprises
+        run(["ffmpeg", "-y", "-v", "error", "-i", str(aiff),
+             "-ar", "48000", "-ac", "2", str(wav)])
+        spoken = duration(wav)
+        clips.append(dict(id=seg["id"], page=seg["page"], app=seg.get("app"),
+                          secs=round(spoken + PAD_AFTER_SPEECH, 3),
+                          spoken=round(spoken, 3),
+                          actions=seg["actions"], popup=seg["popup"]))
+        print(f"  {seg['id']:18} {spoken:6.2f}s spoken  -> holds "
+              f"{spoken + PAD_AFTER_SPEECH:5.2f}s")
+
+    (work() / "clips.json").write_text(json.dumps(
+        dict(voice={"personal": personal_voice, "qwen3": lambda: "Qwen3-TTS clone of Dave"}.get(engine, lambda: voice)(),
+             rate=rate, engine=engine, title=TITLE_SECS, end=END_SECS,
+             clips=clips), indent=2))
+    spk = sum(c["secs"] for c in clips)
+    print(f"\n  {len(clips)} clips · {spk:.1f}s of narration "
+          f"({spk / 60:.1f} min before title and end cards)")
+    return spk
+
+
+def build_audio_track():
+    """Lay each clip at the offset the capture actually reached.
+
+    Built with adelay + amix rather than concat so a clip lands on its real
+    timestamp; concatenating assumes the video had no unaccounted time, which it
+    always does — page loads and sidebar navigation are not free.
+    """
+    tl = json.loads((work() / "timeline.json").read_text())
+    d = work() / "audio"
+    total = tl["total"]
+
+    inputs, filt, labels = [], [], []
+    for i, s in enumerate(tl["segments"]):
+        inputs += ["-i", str(d / f"{s['id']}.wav")]
+        ms = int(round(s["start"] * 1000))
+        filt.append(f"[{i}:a]adelay={ms}|{ms}[a{i}]")
+        labels.append(f"[a{i}]")
+    filt.append(f"{''.join(labels)}amix=inputs={len(labels)}:"
+                f"normalize=0:dropout_transition=0[mixed]")
+    filt.append(f"[mixed]apad,atrim=0:{total:.3f}[out]")
+
+    raw = work() / "narration_raw.wav"
+    run(["ffmpeg", "-y", "-v", "error", *inputs,
+         "-filter_complex", ";".join(filt), "-map", "[out]",
+         "-ar", "48000", "-ac", "2", str(raw)])
+
+    final = work() / "narration.wav"
+    run(["ffmpeg", "-y", "-v", "error", "-i", str(raw),
+         "-af", "loudnorm=I=-16:TP=-1.5:LRA=11", str(final)])
+    print(f"  narration track {duration(final):.1f}s, normalised to -16 LUFS")
+    return final
+
+
+# --------------------------------------------------------------------- 2. cards
+
+def _font(size, bold=False):
+    from PIL import ImageFont
+    names = (["/System/Library/Fonts/Supplemental/Arial Bold.ttf",
+              "/System/Library/Fonts/Helvetica.ttc"] if bold else
+             ["/System/Library/Fonts/Supplemental/Arial.ttf",
+              "/System/Library/Fonts/Helvetica.ttc"])
+    for name in names:
+        try:
+            return ImageFont.truetype(name, size)
+        except OSError:
+            continue
+    return ImageFont.load_default()
+
+
+def _wrap(draw, text, font, maxw):
+    words, lines, cur = text.split(), [], ""
+    for w in words:
+        t = f"{cur} {w}".strip()
+        if draw.textlength(t, font=font) <= maxw:
+            cur = t
+        else:
+            lines.append(cur)
+            cur = w
+    if cur:
+        lines.append(cur)
+    return lines
+
+
+def card(popup, path):
+    """One caption strip, full width, sitting in the band below the app.
+
+    Overlaying cards on top of the app was the first design and it hid whichever
+    panel it landed on — and on these pages every region carries something. Giving
+    captions their own band costs 132px of canvas and hides nothing.
+    """
+    from PIL import Image, ImageDraw
+    f_title, f_fig, f_body = _font(24, True), _font(27, True), _font(17)
+
+    img = Image.new("RGBA", (W, BAND), NAVY + (255,))
+    d = ImageDraw.Draw(img)
+    d.rectangle([0, 0, W, 3], fill=BLUE + (255,))          # accent rule on top
+    d.rectangle([44, 26, 48, BAND - 26], fill=BLUE + (255,))
+
+    x = 70
+    d.text((x, 24), popup["title"], font=f_title, fill=WHITE)
+    for i, ln in enumerate(_wrap(d, popup["body"], f_body, 880)[:2]):
+        d.text((x, 60 + i * 24), ln, font=f_body, fill=DIM)
+
+    # the figure sits right-aligned, so the eye can find it without reading
+    fw = d.textlength(popup["figure"], font=f_fig)
+    d.text((W - 70 - fw, 44), popup["figure"], font=f_fig, fill=BLUE)
+
+    img.save(path)
+    return img.size
+
+
+def title_card(path, sub):
+    from PIL import Image, ImageDraw
+    img = Image.new("RGBA", (W, VH), NAVY + (255,))
+    d = ImageDraw.Draw(img)
+    d.text((90, 360), CFG["title"], font=_font(34, True), fill=BLUE)
+    # A subtitle may carry explicit newlines to control where it breaks: the greedy
+    # wrap is width-optimal but splits phrases badly ("... using BDC" / "Connect
+    # Zero Copy"). Each part is still wrapped, so an over-long part cannot overflow.
+    # Two lines is the ceiling — the strap line below sits at y=560.
+    lines = []
+    for part in CFG["subtitle"].split("\n"):
+        lines.extend(_wrap(d, part, _font(52, True), 1420))
+    if len(lines) > 2:
+        raise SystemExit(
+            f"title subtitle needs {len(lines)} lines; only 2 fit above the strap "
+            f"line at y=560 — shorten it or move the break"
+        )
+    for i, ln in enumerate(lines):
+        d.text((90, 410 + i * 62), ln, font=_font(52, True), fill=WHITE)
+    d.text((90, 560), sub, font=_font(20), fill=DIM)
+    d.rounded_rectangle([90, 620, 250, 624], 2, fill=BLUE + (255,))
+    img.save(path)
+
+
+def end_card(path):
+    from PIL import Image, ImageDraw
+    img = Image.new("RGBA", (W, VH), NAVY + (255,))
+    d = ImageDraw.Draw(img)
+    d.text((90, 330), "Explore it yourself", font=_font(44, True), fill=WHITE)
+    y = 420
+    for k, v in CFG["links"]:
+        d.text((90, y), k, font=_font(15), fill=DIM)
+        d.text((90, y + 22), v, font=_font(22, True), fill=BLUE)
+        y += 78
+    img.save(path)
+
+
+def phase_cards():
+    d = work() / "cards"
+    d.mkdir(parents=True, exist_ok=True)
+    tl = json.loads((work() / "timeline.json").read_text())
+    for s in tl["segments"]:
+        s["card"] = list(card(s["popup"], d / f"{s['id']}.png"))
+    (work() / "timeline.json").write_text(json.dumps(tl, indent=2))
+    mins = tl["total"] / 60
+    title_card(d / "_title.png",
+               f"A narrated walkthrough · {mins:.0f} minutes · "
+               + CFG.get("tagline", "every figure computed live, not illustrative"))
+    end_card(d / "_end.png")
+    print(f"  {len(tl['segments'])} caption cards + title + end card")
+
+
+# ------------------------------------------------------------------- 3. capture
+
+def phase_capture():
+    import time
+    from playwright.sync_api import sync_playwright
+    cl = json.loads((work() / "clips.json").read_text())
+    vid = work() / "raw"
+    if vid.exists():
+        shutil.rmtree(vid)
+    vid.mkdir(parents=True)
+
+    with sync_playwright() as pw:
+        b = pw.chromium.launch(args=["--force-device-scale-factor=1"])
+        ctx_kw = dict(viewport={"width": W, "height": H},
+                      record_video_dir=str(vid),
+                      record_video_size={"width": W, "height": H})
+        # A saved sign-in (see snowsight_login.py) lets an SSO-only app such as
+        # Snowsight be recorded unattended.
+        state = CFG.get("storage_state")
+        if state and pathlib.Path(state).exists():
+            ctx_kw["storage_state"] = str(state)
+        ctx = b.new_context(**ctx_kw)
+        pg = ctx.new_page()
+        # Recording starts with the page; remember when, so the pre-roll trim is
+        # measured rather than inferred from the file length (see below).
+        t_rec = time.monotonic()
+
+        # Multi-app videos name an app per segment; single-app ones use CFG["app"].
+        apps = CFG.get("apps", {})
+        first_app = cl["clips"][0].get("app") if apps else None
+        if first_app:
+            # Snowsight never reaches networkidle (it long-polls), so wait on DOM load.
+            pg.goto(apps[first_app], wait_until="domcontentloaded")
+            pg.wait_for_timeout(6000)
+        else:
+            pg.goto(CFG["app"], wait_until="networkidle")
+            pg.wait_for_timeout(2500)
+
+        # t0 marks video-time zero for the timeline. Everything before it is
+        # page-load noise and gets trimmed off the front in assembly.
+        t0 = time.monotonic()
+        pg.wait_for_timeout(int(TITLE_SECS * 1000))
+
+        segments, cur_page, cur_app = [], None, first_app
+        for s in cl["clips"]:
+            if apps and s.get("app") and s["app"] != cur_app:
+                pg.goto(apps[s["app"]], wait_until="domcontentloaded")
+                pg.wait_for_timeout(3500)
+                cur_app, cur_page = s["app"], None
+            if s["page"] != cur_page:
+                # These apps navigate by button label, not by route — the same
+                # mechanism capture_shots.py uses. A reload would drop state.
+                # Pages with no NAV entry (e.g. Snowsight) navigate via actions.
+                if NAV.get(s["page"]):
+                    pg.get_by_role("button", name=NAV[s["page"]], exact=True).first.click()  # first = sidebar; page tabs may repeat the label
+                    pg.wait_for_timeout(700)    # just long enough for the page to paint
+                cur_page = s["page"]
+
+            # Actions up to the last non-"wait" step must finish before the line
+            # starts (a click has to land before it is described). Trailing plain
+            # waits are dwell time for the viewer, so they run under the voice
+            # instead of as silence before it.
+            acts = s["actions"]
+            k = max((i + 1 for i, a in enumerate(acts) if a[0] != "wait"), default=0)
+            for act in acts[:k]:
+                do_action(pg, act)
+
+            # The caption and the voice line begin now, whatever time the
+            # navigation and clicks happened to consume.
+            start = time.monotonic() - t0
+            dwell = sum(a[1] for a in acts[k:])
+            pg.wait_for_timeout(max(int(s["secs"] * 1000), dwell))
+            segments.append({**s, "start": round(start, 3)})
+            print(f"  {s['id']:18} {s['page']:12} starts {start:7.2f}s  "
+                  f"holds {s['secs']:5.2f}s")
+
+        pg.wait_for_timeout(int(END_SECS * 1000))
+        total = time.monotonic() - t0
+        path = pg.video.path()
+        ctx.close()
+        b.close()
+
+    dst = work() / "screen.webm"
+    shutil.move(str(pathlib.Path(path)), dst)
+
+    raw = duration(dst)
+    # Pre-roll is the time from the start of recording to t0. It used to be taken
+    # as (file length - timeline length), but the recorder keeps running while the
+    # context closes, so that tail was counted as pre-roll and trimmed off the front:
+    # the picture then ran 4-8 s ahead of the voice for the whole video.
+    preroll = round(t0 - t_rec, 3)
+    (work() / "timeline.json").write_text(json.dumps(
+        dict(total=round(total, 3), preroll=max(0.0, preroll),
+             title=cl["title"], end=cl["end"],
+             voice=cl["voice"], rate=cl["rate"], segments=segments), indent=2))
+    print(f"\n  captured {raw:.1f}s · timeline {total:.1f}s · "
+          f"pre-roll to trim {preroll:.1f}s · tail after timeline {raw - total - preroll:.1f}s")
+    build_audio_track()
+    return dst
+
+
+def do_action(pg, act):
+    """Run one scripted action."""
+    kind = act[0]
+    if kind == "click_text":
+        pg.get_by_text(act[1], exact=False).first.click()
+        pg.wait_for_timeout(700)
+    elif kind == "click_button":
+        pg.get_by_role("button", name=act[1], exact=False).first.click()
+        pg.wait_for_timeout(500)
+    elif kind == "click_last_button":         # ("click_last_button", exact name) — the last of several
+        pg.get_by_role("button", name=act[1], exact=True).last.click()
+        pg.wait_for_timeout(500)
+    elif kind == "fill":
+        pg.locator(act[1]).first.fill(act[2])
+        pg.wait_for_timeout(400)
+    elif kind == "press":
+        pg.keyboard.press(act[1])
+        pg.wait_for_timeout(600)
+    elif kind == "select":
+        sel = pg.locator("select").nth(act[1] if len(act) > 2 else 0)
+        if sel.count():
+            sel.select_option(act[-1])
+        pg.wait_for_timeout(500)
+    elif kind == "scroll":
+        pg.mouse.wheel(0, act[1])
+        pg.wait_for_timeout(600)
+    elif kind == "hover":
+        pg.get_by_text(act[1], exact=False).first.hover()
+        pg.wait_for_timeout(600)
+    elif kind == "wait":
+        pg.wait_for_timeout(act[1])
+    # ---- actions used by multi-app videos (e.g. Snowsight + two apps) ----
+    elif kind == "goto":                      # ("goto", url[, settle_ms])
+        pg.goto(act[1], wait_until="domcontentloaded")
+        pg.wait_for_timeout(act[2] if len(act) > 2 else 4000)
+    elif kind == "click_role":                # ("click_role", role, name)
+        pg.get_by_role(act[1], name=act[2], exact=False).first.click()
+        pg.wait_for_timeout(700)
+    elif kind == "type_slow":                 # ("type_slow", selector, text)
+        box = pg.locator(act[1]).first
+        box.click()
+        box.press_sequentially(act[2], delay=45)
+        pg.wait_for_timeout(400)
+    elif kind == "click_css":                 # ("click_css", selector) — e.g. the first row of a result table
+        pg.locator(act[1]).first.click()
+        pg.wait_for_timeout(600)
+    elif kind == "scroll_to":                 # ("scroll_to", text) — bring a heading or banner to the top
+        pg.get_by_text(act[1], exact=False).first.evaluate("e => e.scrollIntoView({block: 'start', behavior: 'smooth'})")
+        pg.wait_for_timeout(900)
+    elif kind == "wait_for_text":             # ("wait_for_text", text, timeout_ms)
+        try:
+            pg.get_by_text(act[1], exact=False).first.wait_for(timeout=act[2] if len(act) > 2 else 90000)
+        except Exception:  # noqa: BLE001 - keep recording; the still check catches it
+            print(f"  ! wait_for_text timed out: {act[1]!r}")
+        pg.wait_for_timeout(800)
+    else:
+        raise ValueError(f"unknown action {act!r}")
+
+
+# ------------------------------------------------------------------ 4. assemble
+
+def phase_assemble():
+    """Composite screen recording + caption band + narration into the mp4.
+
+    Each caption is fed as a LOOPED image lasting exactly its own window. A
+    single-frame PNG cannot be faded: its only frame sits at PTS 0, so
+    `fade=t=in:st=246` leaves that frame fully transparent and the caption never
+    appears. Looping gives the fade real frames to work on, and `setpts` moves the
+    clip to its slot so only its own window is ever generated.
+    """
+    tl = json.loads((work() / "timeline.json").read_text())
+    cards = work() / "cards"
+    total = tl["total"]
+    pre = tl.get("preroll", 0.0)
+    out = CFG["out"]
+
+    inputs = ["-i", str(work() / "screen.webm")]
+    inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{tl['title']:.3f}",
+               "-i", str(cards / "_title.png")]
+    inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{tl['end'] + 0.5:.3f}",
+               "-i", str(cards / "_end.png")]
+    for s_ in tl["segments"]:
+        inputs += ["-loop", "1", "-framerate", str(FPS), "-t", f"{s_['secs']:.3f}",
+                   "-i", str(cards / f"{s_['id']}.png")]
+    inputs += ["-i", str(work() / "narration.wav")]
+    audio_idx = 3 + len(tl["segments"])
+
+    fc = []
+    # trim the page-load pre-roll so video time zero is timeline time zero, then
+    # pad downward to make room for the caption band
+    fc.append(f"[0:v]trim=start={pre:.3f},setpts=PTS-STARTPTS,"
+              f"fps={FPS},scale={W}:{H},setsar=1,"
+              f"pad={W}:{VH}:0:0:color=0x1B3A57[base]")
+    fc.append(f"[1:v]format=rgba,fade=t=out:st={max(0.0, tl['title'] - 0.6):.3f}:"
+              f"d=0.6:alpha=1[tc]")
+    fc.append(f"[base][tc]overlay=0:0:enable='lt(t,{tl['title']:.3f})'[v0]")
+
+    prev = "v0"
+    for i, s_ in enumerate(tl["segments"]):
+        st, dur = s_["start"], s_["secs"]
+        lbl, nxt = f"c{i}", f"v{i + 1}"
+        fo = max(0.0, dur - 0.4)
+        fc.append(f"[{3 + i}:v]format=rgba,"
+                  f"fade=t=in:st=0:d=0.3:alpha=1,"
+                  f"fade=t=out:st={fo:.3f}:d=0.4:alpha=1,"
+                  f"setpts=PTS+{st:.3f}/TB[{lbl}]")
+        fc.append(f"[{prev}][{lbl}]overlay=0:{H}:"
+                  f"enable='between(t,{st:.3f},{st + dur:.3f})'[{nxt}]")
+        prev = nxt
+
+    end_start = total - tl["end"]
+    fc.append(f"[2:v]format=rgba,fade=t=in:st=0:d=0.6:alpha=1,"
+              f"setpts=PTS+{end_start:.3f}/TB[ec]")
+    fc.append(f"[{prev}][ec]overlay=0:0:enable='gte(t,{end_start:.3f})'[vout]")
+
+    out.parent.mkdir(parents=True, exist_ok=True)
+    subprocess.run(["ffmpeg", "-y", "-v", "error", "-stats", *inputs,
+                    "-filter_complex", ";".join(fc),
+                    "-map", "[vout]", "-map", f"{audio_idx}:a",
+                    "-t", f"{total:.2f}",
+                    "-c:v", "libx264", "-preset", "medium", "-crf", "20",
+                    "-pix_fmt", "yuv420p", "-movflags", "+faststart",
+                    "-c:a", "aac", "-b:a", "160k", "-ar", "48000", "-ac", "2",
+                    str(out)], check=True)
+    print(f"\n  wrote {out}")
+    print(f"  {duration(out):.1f}s · {out.stat().st_size // 1024 // 1024} MB")
+
+
+# ------------------------------------------------------------------------- main
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--domain", required=True, choices=sorted(DOMAINS))
+    ap.add_argument("--voice", default="Samantha")
+    ap.add_argument("--rate", type=int, default=168)
+    ap.add_argument("--engine", choices=["qwen3", "personal", "say"], default="qwen3",
+                    help="qwen3 = Dave's cloned voice (Qwen3-TTS); personal = macOS Personal Voice; "
+                         "say = a macOS system voice")
+    ap.add_argument("--phase", choices=["narrate", "capture", "cards", "assemble"])
+    a = ap.parse_args()
+
+    global CFG, NAV, SEGMENTS
+    CFG = DOMAINS[a.domain]
+    mod = importlib.import_module(CFG["segments"])
+    NAV, SEGMENTS = mod.NAV, mod.SEGMENTS
+
+    work().mkdir(parents=True, exist_ok=True)
+    # capture before cards — cards needs the timeline capture writes
+    phases = [a.phase] if a.phase else ["narrate", "capture", "cards", "assemble"]
+
+    for ph in phases:
+        print(f"\n=== {a.domain} · {ph} ===")
+        {"narrate": lambda: phase_narrate(a.voice, a.rate, a.engine),
+         "capture": phase_capture,
+         "cards": phase_cards,
+         "assemble": phase_assemble}[ph]()
+
+
+if __name__ == "__main__":
+    main()

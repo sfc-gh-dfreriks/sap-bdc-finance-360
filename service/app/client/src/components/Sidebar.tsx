@@ -7,13 +7,15 @@ import {
   CreditCard,
   Calendar,
   Bot,
-  Database,
+  GitBranch,
   Check,
+  Sparkles,
 } from 'lucide-react';
 import { useFilters } from '@/hooks/useFilters';
 import { cn } from '@/lib/utils';
 
 export type PageId =
+  | 'ask-cortex'
   | 'overview'
   | 'general-ledger'
   | 'cost-centers'
@@ -21,7 +23,7 @@ export type PageId =
   | 'accounts-payable'
   | 'accounts-receivable'
   | 'period-analysis'
-  | 'bdc-products'
+  | 'lineage'
   | 'analyst';
 
 export interface NavItem {
@@ -31,6 +33,7 @@ export interface NavItem {
 }
 
 export const NAV_ITEMS: NavItem[] = [
+  { id: 'ask-cortex', label: 'Ask Cortex', icon: Sparkles },
   { id: 'overview', label: 'Executive Overview', icon: LayoutDashboard },
   { id: 'general-ledger', label: 'General Ledger', icon: BookOpen },
   { id: 'cost-centers', label: 'Cost Centers', icon: PieChart },
@@ -38,7 +41,7 @@ export const NAV_ITEMS: NavItem[] = [
   { id: 'accounts-payable', label: 'Accounts Payable', icon: Receipt },
   { id: 'accounts-receivable', label: 'Accounts Receivable', icon: CreditCard },
   { id: 'period-analysis', label: 'Period Analysis', icon: Calendar },
-  { id: 'bdc-products', label: 'BDC Data Products', icon: Database },
+  { id: 'lineage', label: 'BDC Sources & Lineage', icon: GitBranch },
   { id: 'analyst', label: 'Cortex Analyst', icon: Bot },
 ];
 
@@ -70,7 +73,7 @@ export default function Sidebar({ activePage, onNavigate }: SidebarProps) {
       {/* Logo */}
       <div className="flex flex-col gap-1.5 border-b border-white/10 px-5 py-4">
         <img
-          src="/snowflake_logo.svg"
+          src={`${import.meta.env.BASE_URL}snowflake_logo.svg`}
           alt="Snowflake"
           className="h-7 w-auto self-start"
         />

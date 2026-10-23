@@ -17,12 +17,15 @@ global reach on top — no pipelines, full SAP context preserved.
 3. **General Ledger** — GL postings by account; drill cost centers & profit centers.
 4. **Accounts Payable** — supplier invoices and AP aging.
 5. **Accounts Receivable** — AR aging buckets, DSO, slow-paying customers.
-6. **Ask the Agent** — type a question live into the `SAP_FINANCE_360_AGENT`:
+6. **Ask Cortex** — click "Ask Cortex about Accounts Receivable" (or open the
+   Ask Cortex page) for a written analysis of the live figures with recommended
+   actions; try "Which customers should we chase first?".
+7. **Ask the Agent** — type a question live into the `SAP_FINANCE_360_AGENT`:
    - "What is revenue vs expenses by company code?"
    - "Show the monthly revenue trend."
    - "Which customers are slowest to pay?"
-7. **Show the generated SQL** — prove it's governed and explainable.
-8. **Recap** — zero-ETL, governed, AI-ready, one-click distribution.
+8. **Show the generated SQL** — prove it's governed and explainable.
+9. **Recap** — zero-ETL, governed, AI-ready, one-click distribution.
 
 ## Key points to land
 - The data is **already inside Snowflake** — no ETL, no waiting.

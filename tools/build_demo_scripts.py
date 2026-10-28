@@ -186,7 +186,7 @@ def cover(doc, F):
     w = F["data_windows"]
     bullet(doc,
            f"Open the application at **{F['app_url']}** and confirm the Executive "
-           f"Overview loads before the room does.", size=9.5)
+           f"Dashboard loads before the room does.", size=9.5)
     bullet(doc,
            f"Know the date windows. Ledger runs to **{w['DT_JOURNAL_ENTRY_360']['max']}**, "
            f"payables to **{w['DT_AP_AGING']['max']}**, receivables "

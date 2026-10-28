@@ -13,14 +13,16 @@ global reach on top — no pipelines, full SAP context preserved.
 ## 10-minute flow
 
 1. **Open the app** — no setup; the data is already inside (bundled Native App).
-2. **Overview** — revenue, expenses and net income by company code (US/DE/JP).
+   It opens on **Executive Dashboard** (sidebar page 2, under Ask Cortex).
+2. **Executive Dashboard** — revenue, expenses and net income by company code (US/DE/JP).
 3. **General Ledger** — GL postings by account; drill cost centers & profit centers.
 4. **Accounts Payable** — supplier invoices and AP aging.
 5. **Accounts Receivable** — AR aging buckets, DSO, slow-paying customers.
 6. **Ask Cortex** — click "Ask Cortex about Accounts Receivable" (or open the
    Ask Cortex page) for a written analysis of the live figures with recommended
    actions; try "Which customers should we chase first?".
-7. **Ask the Agent** — type a question live into the `SAP_FINANCE_360_AGENT`:
+7. **Snowflake Intelligence** — type a question live into the `SAP_FINANCE_360_AGENT`
+   (the agent has no in-app page):
    - "What is revenue vs expenses by company code?"
    - "Show the monthly revenue trend."
    - "Which customers are slowest to pay?"

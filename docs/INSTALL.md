@@ -5,7 +5,7 @@ Two ways to stand this up:
 - **A. Build the data platform** (L0 → L1 → L2 → semantic → agent) in a Snowflake
   account. This gives you the medallion architecture + the `SAP_FINANCE_360_AGENT`
   for Snowflake Intelligence.
-- **B. Deploy the self-contained Native App** (React dashboard + Ask the Agent)
+- **B. Deploy the self-contained Native App** (React dashboard + Ask Cortex)
   and publish it as an organization listing — optionally across multiple regions.
 
 You can do A only, B only, or both. B bundles its own data, so it does **not**
@@ -124,7 +124,7 @@ auto-fulfillment — each region hosts its own governed install. Locator:
 
 ## Cortex access
 
-The "Ask the Agent" page calls Cortex Analyst from inside the container. Grant
+Ask Cortex calls `AI_COMPLETE` from inside the container. Grant
 the app the Cortex role (done automatically by `deploy_native_app.py`):
 
 ```sql

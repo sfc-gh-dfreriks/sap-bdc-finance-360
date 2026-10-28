@@ -46,15 +46,15 @@ FACTS_FILE = pathlib.Path("/tmp/finance_facts.json")
 DATE = date.today().strftime("%d %B %Y")
 
 PAGE_PURPOSE = {
-    "Executive Overview": "P&L headline, revenue and expense trend, net income by period",
+    "Ask Cortex": "Plain-English questions, answered by AI_COMPLETE from SQL facts over the page tables",
+    "Executive Dashboard": "P&L headline, revenue and expense trend, net income by period",
     "General Ledger": "Journal entries down to line item, by account and company code",
     "Cost Centers": "Where spend actually lands, by cost centre and period",
     "Profit Centers": "Revenue attribution by profit centre",
     "Accounts Payable": "Supplier invoices, aging buckets, days outstanding",
     "Accounts Receivable": "Customer invoices, overdue exposure, days to pay",
     "Period Analysis": "Fiscal period comparison and close progression",
-    "BDC Data Products": "The SAP BDC catalog the data came from",
-    "Cortex Analyst": "Natural-language questions over a stage semantic model",
+    "BDC Sources & Lineage": "The SAP BDC data products the app reads, and their lineage",
 }
 
 

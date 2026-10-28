@@ -19,7 +19,7 @@ THREE HONESTY BEATS ARE SCRIPTED IN:
 """
 
 NAV = {
-    "overview": "Spend Overview",
+    "overview": "Executive Dashboard",
     "categories": "Categories",
     "suppliers": "Suppliers",
     "risk": "Supplier Risk",
@@ -28,7 +28,7 @@ NAV = {
     "contracts": "Contract Compliance",
     "orders": "Purchase Orders",
     "lineage": "BDC Sources & Lineage",
-    "analyst": "Ask the Agent",
+    "analyst": "Ask Cortex",
 }
 
 SEGMENTS = [
@@ -175,7 +175,7 @@ SEGMENTS = [
             "rather than trusted. [[slnc 350]] One limit: the agent doesn't use the "
             "currency switch yet, so ask it per company, or have it group by currency."
         ),
-        popup=dict(title="Ask the Agent", figure="21 dims · 13 metrics",
+        popup=dict(title="Ask Cortex", figure="21 dims · 13 metrics",
                    body="Spend, suppliers, risk, taxonomy and savings. Ask per company, or group by currency."),
     ),
     dict(

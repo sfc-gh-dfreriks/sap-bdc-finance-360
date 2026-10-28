@@ -137,7 +137,8 @@ the same thing.
 - **A Cortex Analyst stage model** — a YAML file at
   `@SAP_FINANCE_360.SEMANTIC.SEMANTIC_MODELS/finance_360.semantic.yaml`.
 
-The React application's Cortex Analyst page reads **the stage model**. It does
+The React application's `/api/analyst` server route (no longer an in-app page)
+reads **the stage model**. It does
 not read either semantic view. The distinction is easy to get wrong and it
 changes what you edit when an Analyst answer is bad; it is set out in full in
 [the semantic layer](08-semantic-layer.md).

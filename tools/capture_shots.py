@@ -125,8 +125,9 @@ def main() -> int:
 
         for i, (pid, label) in enumerate(items):
             try:
-                if i:  # first page is already showing
-                    page.get_by_role("button", name=label, exact=True).click(timeout=15000)
+                # always click: apps open on Executive Dashboard (nav item 2),
+                # not on nav item 1 (Ask Cortex)
+                page.get_by_role("button", name=label, exact=True).click(timeout=15000)
                 what = settle(page)
                 time.sleep(args.settle)
                 shot = out / f"{i:02d}_{pid}.png"

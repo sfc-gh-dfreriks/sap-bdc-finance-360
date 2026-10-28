@@ -13,7 +13,7 @@ share no keys), and money is USD at planning rates.
 """
 
 NAV = {
-    "overview": "Enterprise Overview",
+    "overview": "Executive Dashboard",
     "model": "Master Ontology Model",
     "customers": "Customer 360",
     "suppliers": "Supplier 360",
@@ -22,7 +22,7 @@ NAV = {
     "impact": "Impact Map",
     "mitigation": "Mitigation & Recovery",
     "lineage": "BDC Lineage",
-    "ask": "Ask the Enterprise",
+    "ask": "Ask Cortex",
 }
 
 NEXT = ("click_role", "button", "Next")
@@ -153,7 +153,7 @@ SEGMENTS = [
             "semantic view, across every app. [[slnc 400]] Six apps, one ontology, [[slnc 200]] in U S, "
             "Europe and Asia Pacific."
         ),
-        popup=dict(title="Ask the Enterprise", figure="Cortex Analyst",
+        popup=dict(title="Ask Cortex", figure="Cortex Analyst",
                    body="SQL over SAP_ENTERPRISE_360, the master semantic view."),
     ),
 ]

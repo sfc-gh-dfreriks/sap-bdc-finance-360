@@ -27,13 +27,13 @@ than the deals they win. That contrast is real in the data, not a talking point.
 # Page routes, by sidebar button label — navigation happens in-app, exactly as
 # capture_shots.py does it.
 NAV = {
-    "dashboard": "Dashboard",
+    "dashboard": "Executive Dashboard",
     "funnel": "Sales Funnel",
     "health": "Customer Health",
     "products": "Products",
     "leaderboard": "Rep Leaderboard",
     "forecast": "Sales Forecast",
-    "chat": "Ask the Agent",
+    "chat": "Ask Cortex",
 }
 
 SEGMENTS = [

@@ -159,13 +159,13 @@ most common source of wasted time on this stack.
 
 | Consumer is wrong | Edit |
 |---|---|
-The app's Cortex Analyst page | `finance_360.semantic.yaml` on `@SAP_FINANCE_360.SEMANTIC.SEMANTIC_MODELS/` |
+The app's `/api/analyst` route (no page) | `finance_360.semantic.yaml` on `@SAP_FINANCE_360.SEMANTIC.SEMANTIC_MODELS/` |
 `SAP_FINANCE_360_AGENT` in Snowflake Intelligence | whichever semantic view the agent is bound to |
 A direct `SEMANTIC_VIEW(...)` query | the semantic view named in that query |
 
 **The app reads the stage YAML.** Editing `ANALYTICS.SAP_FINANCE_360` or
 `SEMANTIC.SAP_FINANCE_360_ANALYTICS` will not change a single answer on the
-app's Analyst page. This was got wrong once and is worth stating twice.
+app's `/api/analyst` route. This was got wrong once and is worth stating twice.
 
 To pull the current model down, inspect it and put it back:
 
@@ -213,8 +213,8 @@ python tools/capture_shots.py
 
 Writes nine PNGs and a `manifest.json` to `/tmp/finance_shots/`. The manifest
 records which selector each page settled on, which is the useful part when a
-capture hangs: seven pages settle on `canvas`, and **BDC Data Products** and
-**Cortex Analyst** settle on `[class*=card]` because they contain no chart.
+capture hangs: seven pages settle on `canvas`, and **BDC Sources & Lineage** and
+**Ask Cortex** settle on `[class*=card]` because they contain no chart.
 
 If a capture of one of those two pages times out, the settle selector has
 regressed to a global `canvas` wait.
@@ -274,6 +274,6 @@ A total looks too small by roughly half | signed amounts summed without `ABS`, s
 Analyst answers unchanged after editing a semantic view | the app reads the stage YAML, not the views |
 Analyst cannot answer an AP, GL-balance or P&L question | those three L2 tables are not in the model |
 Analyst picks an odd table for a clear question | 0 verified queries — there is nothing steering it |
-Screenshot capture hangs on BDC Data Products or Cortex Analyst | those pages have no `canvas`; settle on `[class*=card]` |
+Screenshot capture hangs on BDC Sources & Lineage or Ask Cortex | those pages have no `canvas`; settle on `[class*=card]` |
 A markdown table row is missing from the `.docx` | a pipe-stripping regression in the table parser |
 2025 looks like a collapse | fiscal 2025 is partial: 578 documents, ledger ends 2025-03-28 |

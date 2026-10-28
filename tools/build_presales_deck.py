@@ -292,7 +292,7 @@ def s04_pages(prs, f, shots):
         runs(slide, cx + 0.20, y + 0.12, cw - 0.34, 0.24,
              [(label, 10, True, K.DK2, 0)])
         y += 0.52
-    note(slide, "Shown: the Executive Overview page. Company-code filters apply across every page.")
+    note(slide, "Shown: the Executive Dashboard page, where the app opens. Company-code filters apply across every page.")
     return slide
 
 
@@ -356,16 +356,18 @@ def s07_ar(prs, f, shots):
 
 
 def s08_ai(prs, f, shots):
-    slide = content(prs, "Cortex Analyst — plain English over the gold layer")
+    slide = content(prs, "Ask Cortex — plain English over the gold layer")
     pic_w, pic_h = 5.62, 3.51
     rect(slide, X0, Y0, pic_w, pic_h, K.LIGHT_BG)
-    picture(slide, shots["analyst"]["path"], X0, Y0, pic_w, pic_h)
+    picture(slide, shots["ask-cortex"]["path"], X0, Y0, pic_w, pic_h)
 
     model = f["analyst_model"]
     cx, cw = 6.20, 3.30
     runs(slide, cx, Y0, cw, 0.66, [
-        (f"The agent reads a semantic model file on stage "
-         f"({model['stage_file']}) — not a semantic view.", 8.5, False, K.BODY_GREY, 0)])
+        (f"Ask Cortex answers from SQL facts via AI_COMPLETE. Cortex Analyst "
+         f"reads a semantic model file on stage ({model['stage_file']}) — not a "
+         f"semantic view — behind the server's /api/analyst route.",
+         8.5, False, K.BODY_GREY, 0)])
 
     y = 2.00
     for label, value, accent in [
@@ -440,7 +442,7 @@ def s10_next(prs, f):
     slide = content(prs, "Where to take it")
     steps = [
         ("Demo it as-is",
-         f"Open the {f['app_page_count']}-page app and walk the Executive Overview, "
+         f"Open the {f['app_page_count']}-page app and walk the Executive Dashboard, "
          f"then GL, AP and AR. No setup, no warehouse to size."),
         ("Show the architecture",
          f"Run the SQL in the repo against your own account: L1 views, then the "

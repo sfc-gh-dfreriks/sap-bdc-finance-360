@@ -38,17 +38,17 @@ SNOWSIGHT = "https://app.snowflake.com/sfsenorthamerica/dfreriks_aws1_w2/"
 # Page ids are prefixed by app because both apps have an "overview".
 NAV = {
     # Supply Chain 360
-    "sc_overview": "Executive Overview",
+    "sc_overview": "Executive Dashboard",
     "sc_optimization": "SC Optimization",
     "sc_forecasting": "SC Forecasting",
     "sc_fulfillment": "Fulfillment & Constraints",
     "sc_equipment": "Equipment Health",
     "sc_components": "Components & Digital Thread",
     "sc_lineage": "BDC Sources & Lineage",
-    "sc_analyst": "Cortex Analyst",
+    "sc_analyst": "Ask Cortex",
     "sc_ontology": "Supply Chain Ontology",
     # Supply Chain Ontology app
-    "on_overview": "Overview",
+    "on_overview": "Executive Dashboard",
     "on_catalog": "SAP BDC Catalog",
     "on_scenario": "Scenario Studio",
     "on_ripple": "Ripple Map",
@@ -109,7 +109,7 @@ SEGMENTS = [
             "percent, [[slnc 150]] yield eighty two point six, [[slnc 150]] and "
             "inventory turns eight and a half times."
         ),
-        popup=dict(title="Executive Overview", figure="OEE 83.5%",
+        popup=dict(title="Executive Dashboard", figure="OEE 83.5%",
                    body="5 plants · 20 production orders · yield 82.6% · "
                         "scrap 2.02% · inventory turns 8.5."),
     ),
@@ -230,7 +230,7 @@ SEGMENTS = [
             "Anyone can just ask. [[slnc 250]] Cortex Analyst turns a plain English "
             "question into S Q L, [[slnc 200]] using a semantic model of the supply chain."
         ),
-        popup=dict(title="Ask Cortex Analyst", figure="Natural language",
+        popup=dict(title="Ask Cortex", figure="Natural language",
                    body="“What is the overall on-time delivery rate?”"),
     ),
     dict(

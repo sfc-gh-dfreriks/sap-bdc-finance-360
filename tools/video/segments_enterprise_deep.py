@@ -17,7 +17,7 @@ Cortex narrates over the wait, and the NEXT segment waits for the answer.
 """
 
 NAV = {
-    "overview": "Enterprise Overview",
+    "overview": "Executive Dashboard",
     "usecases": "Management Use Cases",
     "scenario": "Enterprise Scenario Studio",
     "model": "Master Ontology Model",
@@ -29,7 +29,7 @@ NAV = {
     "risk": "Risk Outcome",
     "mitigation": "Mitigation & Recovery",
     "lineage": "BDC Lineage",
-    "ask": "Ask the Enterprise",
+    "ask": "Ask Cortex",
 }
 NEXT = ("click_role", "button", "Next")
 
@@ -440,7 +440,7 @@ SEGMENTS = [
          narration=("And for questions nobody prepared a page for, [[slnc 200]] ask in plain language. [[slnc 250]] Cortex "
                     "Analyst writes the S Q L against the enterprise semantic view, [[slnc 200]] which covers every app "
                     "through the golden records."),
-         popup=dict(title="Ask the Enterprise", figure="Cortex Analyst",
+         popup=dict(title="Ask Cortex", figure="Cortex Analyst",
                     body="SQL over SAP_ENTERPRISE_360, the master semantic view.")),
     dict(id="53_ask_answer", page="ask", actions=[("wait_for_text", "show SQL", 150000), ("wait", 1500)],
          narration=("The answer comes back as a table, [[slnc 150]] with the S Q L one click away, [[slnc 200]] so anyone "

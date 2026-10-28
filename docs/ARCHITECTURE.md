@@ -38,8 +38,8 @@ preserved.
  └──────────────────────────────────────────────────────────────────────────┘
               │                                        │
               ▼                                        ▼
-   SAP_FINANCE_360_AGENT                    Native App "Ask the Agent"
-   (Snowflake Intelligence)                 (Cortex Analyst in-app)
+   SAP_FINANCE_360_AGENT                    Native App "Ask Cortex"
+   (Snowflake Intelligence)                 (AI_COMPLETE in-app)
                                                         │
                                             React + Express on SPCS
                                             (self-contained Native App)
@@ -89,6 +89,7 @@ DDL: [`sql/03_l2_analytics_dynamic_tables.sql`](../sql/03_l2_analytics_dynamic_t
 For distribution, the app is packaged as a **self-contained Snowflake Native
 App**: the 8 tables the UI needs are **bundled** into the application package's
 `SHARED_DATA` schema (no consumer references), and an in-app copy of the
-`SAP_FINANCE_360` semantic view powers the Cortex Analyst page. The React client
+`SAP_FINANCE_360` semantic view backs the server's `/api/analyst` route (no app
+page since the nav change; in-app questions go through Ask Cortex). The React client
 + Express server run on **Snowpark Container Services**. See
 [`app/`](../app) and [`INSTALL.md`](INSTALL.md).

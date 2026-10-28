@@ -21,7 +21,7 @@ THREE HONESTY BEATS ARE SCRIPTED IN:
 """
 
 NAV = {
-    "overview": "Working Capital Overview",
+    "overview": "Executive Dashboard",
     "cash": "Cash & Liquidity",
     "ar": "Accounts Receivable",
     "ap": "Accounts Payable",
@@ -29,7 +29,7 @@ NAV = {
     "inventory": "Inventory",
     "opps": "WC Opportunities",
     "lineage": "BDC Sources & Lineage",
-    "analyst": "Ask the Agent",
+    "analyst": "Ask Cortex",
 }
 
 SEGMENTS = [
@@ -178,7 +178,7 @@ SEGMENTS = [
             "cash conversion cycle rose in Japan, [[slnc 200]] and it shows the S Q L it "
             "wrote, so the answer can be checked rather than trusted."
         ),
-        popup=dict(title="Ask the Agent", figure="21 metrics",
+        popup=dict(title="Ask Cortex", figure="21 metrics",
                    body="Cortex Analyst over SAP_WORKING_CAPITAL_360_ANALYTICS, "
                         "with the generated SQL shown."),
     ),

@@ -197,7 +197,7 @@ object, not an L2 one.
 
 This was a deliberate choice and it demonstrates the zero-copy claim in the most
 direct way available: a third of the application's queries execute against the
-provider's storage, with no copy anywhere in the path. Page 8, BDC Data Products,
+provider's storage, with no copy anywhere in the path. Page 9, BDC Sources & Lineage,
 exists to make that visible.
 
 It carries two costs.
@@ -249,7 +249,7 @@ wrote 251 dimension descriptions.
 
 ## The Cortex Analyst model has zero verified queries
 
-The app's Analyst page reads
+The app's `/api/analyst` route reads
 `@SAP_FINANCE_360.SEMANTIC.SEMANTIC_MODELS/finance_360.semantic.yaml`:
 
 | Property | Value |
@@ -280,7 +280,7 @@ Three of the seven L2 objects are outside the model entirely:
 `DT_PNL_SUMMARY` | 81 | no P&L-summary question can be answered |
 
 The app has dedicated pages for Accounts Payable, General Ledger and Period
-Analysis. A user who sees those pages and then asks the Analyst page a question
+Analysis. A user who sees those pages and then asks Cortex Analyst a question
 about them gets nothing useful, and the interface gives no indication why.
 
 Closing this is the highest-value remaining work on the stack. Detail in

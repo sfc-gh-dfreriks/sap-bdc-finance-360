@@ -25,7 +25,7 @@ time remains.
 # Page routes, by sidebar button label — navigation happens in-app, exactly as
 # capture_shots.py does it. These apps have no router to deep-link into.
 NAV = {
-    "overview": "Executive Overview",
+    "overview": "Executive Dashboard",
     "gl": "General Ledger",
     "cost": "Cost Centers",
     "profit": "Profit Centers",
@@ -33,7 +33,7 @@ NAV = {
     "ar": "Accounts Receivable",
     "period": "Period Analysis",
     "products": "BDC Sources & Lineage",
-    "analyst": "Cortex Analyst",
+    "analyst": "Ask Cortex",
 }
 
 SEGMENTS = [
@@ -168,7 +168,7 @@ SEGMENTS = [
             "zero verified queries on it today. For a customer deployment you'd "
             "add those before you trusted it in front of a C F O."
         ),
-        popup=dict(title="Cortex Analyst", figure="4 tables · 9 measures",
+        popup=dict(title="Ask Cortex", figure="4 tables · 9 measures",
                    body="24 dimensions over the stage semantic model. Zero verified "
                         "queries today — the first thing to add before production."),
     ),

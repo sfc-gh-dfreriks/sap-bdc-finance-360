@@ -110,7 +110,8 @@ Base tables: `ANALYTICS.DT_JOURNAL_ENTRY_360`,
 `ANALYTICS.DT_EXPENSE_BY_COSTCENTER`,
 `ANALYTICS.DT_REVENUE_BY_PROFITCENTER`, `ANALYTICS.DT_AR_AGING`.
 
-**The React app's Cortex Analyst page reads this file.** It does not read either
+**The React app's `/api/analyst` server route reads this file** (no in-app
+page since the nav change; Ask Cortex does not use it). It does not read either
 semantic view.
 
 This is stated in [concepts](01-concepts.md),
@@ -147,8 +148,8 @@ independent editing histories.
 
 | Wrong behaviour | Edit |
 |---|---|
-App Analyst page gives a bad answer | the stage YAML |
-App Analyst page cannot answer at all | the stage YAML — likely a missing base table |
+App `/api/analyst` route gives a bad answer | the stage YAML |
+App `/api/analyst` route cannot answer at all | the stage YAML — likely a missing base table |
 `SAP_FINANCE_360_AGENT` gives a bad answer | the semantic view the agent is bound to |
 A `SEMANTIC_VIEW(...)` query is wrong | the view named in that query |
 A metric definition is wrong | `ANALYTICS.SAP_FINANCE_360` — it holds all 45 |

@@ -161,8 +161,8 @@ alone. Adding them is the highest-value remaining work on this stack — see
 Snowflake Intelligence.
 
 The agent is a separate consumer from the app. Confirming the agent answers
-correctly does not confirm the app will, because the app's Cortex Analyst page
-goes to the stage model.
+correctly does not confirm the app's `/api/analyst` route will, because that route
+goes to the stage model. (The route has no in-app page since the nav change.)
 
 ---
 
@@ -181,8 +181,8 @@ data-source census in [architecture](02-architecture.md#the-app-reads-two-layers
 possible — a `FROM`-clause grep over one file is a complete inventory. Put one
 query in the client and that stops being true.
 
-Build the nine pages in the order they appear in the sidebar. The Cortex Analyst
-page goes last, because it depends on step 5 rather than on any page above it.
+Build the nine pages in the order they appear in the sidebar: Ask Cortex first,
+then Executive Dashboard (the page the app opens on), then the data pages.
 
 ---
 
@@ -196,18 +196,21 @@ Nine pages, nine screenshots:
 
 | File | Page | Settled on |
 |---|---|---|
-`00_overview.png` | Executive Overview | `canvas` |
-`01_general-ledger.png` | General Ledger | `canvas` |
-`02_cost-centers.png` | Cost Centers | `canvas` |
-`03_profit-centers.png` | Profit Centers | `canvas` |
-`04_accounts-payable.png` | Accounts Payable | `canvas` |
-`05_accounts-receivable.png` | Accounts Receivable | `canvas` |
-`06_period-analysis.png` | Period Analysis | `canvas` |
-`07_bdc-products.png` | BDC Data Products | `[class*=card]` |
-`08_analyst.png` | Cortex Analyst | `[class*=card]` |
+`00_ask-cortex.png` | Ask Cortex | `[class*=card]` |
+`01_overview.png` | Executive Dashboard | `canvas` |
+`02_general-ledger.png` | General Ledger | `canvas` |
+`03_cost-centers.png` | Cost Centers | `canvas` |
+`04_profit-centers.png` | Profit Centers | `canvas` |
+`05_accounts-payable.png` | Accounts Payable | `canvas` |
+`06_accounts-receivable.png` | Accounts Receivable | `canvas` |
+`07_period-analysis.png` | Period Analysis | `canvas` |
+`08_lineage.png` | BDC Sources & Lineage | `[class*=card]` |
 
-The two pages that settle on `[class*=card]` rather than `canvas` are the two
-with no chart — BDC Data Products and Cortex Analyst are card layouts. A capture
+Filenames are `<index>_<sidebar id>.png`. The capture clicks every page,
+including the first, because the app opens on Executive Dashboard (item 2), not
+on item 1. The settle selectors for Ask Cortex and BDC Sources & Lineage are
+expected rather than re-verified since the nav change — check `manifest.json`.
+Pages with no chart are card layouts. A capture
 script waiting for a canvas on those pages waits forever, so the settle selector
 is per-page rather than global.
 

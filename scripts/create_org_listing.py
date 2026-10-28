@@ -24,9 +24,9 @@ PKG = "FINANCE_360_PKG"
 LISTING = "FINANCE_360_ORG"
 CONTACT = os.environ.get("LISTING_CONTACT", "you@example.com")
 DESC = ("Self-contained SAP Finance 360 dashboard (React + Express on Snowpark Container Services) "
-        "with bundled data. Ask Cortex, the first page, plus an 'Ask Cortex about <page>' button on every "
-        "data page, has Snowflake Cortex (AI_COMPLETE) analyse the live figures for that page and recommend "
-        "actions. A Cortex Analyst 'Ask the Agent' page is powered by the SAP_FINANCE_360_AGENT semantic model. "
+        "with bundled data. The Ask Cortex page, and the 'Ask Cortex about <page>' button on every "
+        "data page, have Snowflake Cortex (AI_COMPLETE) analyse the live figures for that page and recommend "
+        "actions. The app opens on the Executive Dashboard. "
         "No data setup required.")
 
 

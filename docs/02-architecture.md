@@ -176,7 +176,8 @@ Its base tables are `ANALYTICS.DT_JOURNAL_ENTRY_360`,
 `ANALYTICS.DT_EXPENSE_BY_COSTCENTER`,
 `ANALYTICS.DT_REVENUE_BY_PROFITCENTER` and `ANALYTICS.DT_AR_AGING`.
 
-**The app's Cortex Analyst page reads this stage file.** It does not read
+**The app's `/api/analyst` route reads this stage file** (it has had no in-app
+page since the nav change). It does not read
 `ANALYTICS.SAP_FINANCE_360` and it does not read
 `SEMANTIC.SAP_FINANCE_360_ANALYTICS`. If an Analyst answer is wrong, the file to
 edit is the YAML on the stage; changing either semantic view will have no effect
@@ -206,19 +207,20 @@ The nine pages:
 
 | # | Page |
 |---|---|
-1 | Executive Overview |
-2 | General Ledger |
-3 | Cost Centers |
-4 | Profit Centers |
-5 | Accounts Payable |
-6 | Accounts Receivable |
-7 | Period Analysis |
-8 | BDC Data Products |
-9 | Cortex Analyst |
+1 | Ask Cortex |
+2 | Executive Dashboard (the app opens here) |
+3 | General Ledger |
+4 | Cost Centers |
+5 | Profit Centers |
+6 | Accounts Payable |
+7 | Accounts Receivable |
+8 | Period Analysis |
+9 | BDC Sources & Lineage |
 
-Pages 1–7 are conventional dashboards. Page 8 exists to make the zero-copy claim
-visible — it shows the shares themselves. Page 9 is the natural-language surface
-over the stage model.
+Page 1 is the natural-language surface (`AI_COMPLETE` over per-page SQL facts).
+Pages 2–8 are conventional dashboards. Page 9 exists to make the zero-copy claim
+visible — it shows the shares themselves. The former Cortex Analyst page was
+removed; the `SAP_FINANCE_360_AGENT` is used from Snowflake Intelligence.
 
 All SQL lives in the server. The client holds no query text, which is what makes
 the `FROM`-clause census in the table above a complete inventory of what the

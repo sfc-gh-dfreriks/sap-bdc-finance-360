@@ -14,9 +14,10 @@ dashboard (React + Express) on Snowpark Container Services.
   button on every data page. The app gathers live facts for the page from its
   bundled tables and asks Snowflake Cortex (`AI_COMPLETE`, `claude-sonnet-4-5`)
   for a written analysis with recommended actions.
-- **Ask the Agent** — A natural-language analytics page powered by Cortex
-  Analyst over the bundled **`SAP_FINANCE_360`** semantic view — the same model
-  behind the account-level **`SAP_FINANCE_360_AGENT`** Cortex Agent.
+- **Executive Dashboard** — the second sidebar page, and the page the app opens
+  on. The account-level **`SAP_FINANCE_360_AGENT`** Cortex Agent (over the
+  `SAP_FINANCE_360` semantic view) is used from Snowflake Intelligence; it no
+  longer has an in-app page.
 
 ## Data model
 
@@ -34,8 +35,8 @@ covering three company codes (1000 = US, 2100 = DE, 5000 = JP).
 
 ## Cortex access
 
-Grant the app the `SNOWFLAKE.CORTEX_USER` database role so the "Ask the Agent"
-page can call Cortex Analyst and Ask Cortex can call `AI_COMPLETE`:
+Grant the app the `SNOWFLAKE.CORTEX_USER` database role so Ask Cortex can call
+`AI_COMPLETE`:
 
 ```sql
 GRANT DATABASE ROLE SNOWFLAKE.CORTEX_USER TO APPLICATION <app name>;

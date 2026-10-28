@@ -38,7 +38,7 @@ time remains.
 # Page routes, by sidebar button label — navigation happens in-app, exactly as
 # capture_shots.py does it. This app has no router to deep-link into.
 NAV = {
-    "overview": "Workforce Overview",
+    "overview": "Executive Dashboard",
     "headcount": "Headcount",
     "diversity": "Diversity & Inclusion",
     "compensation": "Compensation",
@@ -49,7 +49,7 @@ NAV = {
     "org": "Org & Span",
     "employees": "Employees",
     "lineage": "BDC Sources & Lineage",
-    "analyst": "Ask the Agent",
+    "analyst": "Ask Cortex",
     "onboarding": "Onboarding Scenario",
 }
 
@@ -288,7 +288,7 @@ SEGMENTS = [
             "all fine. Performance, learning and recruiting are on the dashboards "
             "but not yet available to the agent."
         ),
-        popup=dict(title="Ask the Agent", figure="19 dims · 8 facts",
+        popup=dict(title="Ask Cortex", figure="19 dims · 8 facts",
                    body="Workforce table only. Performance, learning and recruiting "
                         "are dashboard-only — extending the model is the next step."),
     ),

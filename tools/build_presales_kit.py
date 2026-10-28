@@ -51,15 +51,15 @@ FACTS_FILE = pathlib.Path("/tmp/finance_facts.json")
 DATE = date.today().strftime("%d %B %Y")
 
 PAGE_PURPOSE = {
-    "Executive Overview": "P&L headline, revenue and expense trend, net income by period",
+    "Ask Cortex": "Plain-English questions, answered by AI_COMPLETE from SQL facts over the page tables",
+    "Executive Dashboard": "P&L headline, revenue and expense trend, net income by period",
     "General Ledger": "Journal entries down to line item, by account and company code",
     "Cost Centers": "Where spend actually lands, by cost centre and period",
     "Profit Centers": "Revenue attribution by profit centre",
     "Accounts Payable": "Supplier invoices, aging buckets, days outstanding",
     "Accounts Receivable": "Customer invoices, overdue exposure, days to pay",
     "Period Analysis": "Fiscal period comparison and close progression",
-    "BDC Data Products": "The SAP BDC catalog the data came from",
-    "Cortex Analyst": "Natural-language questions over the semantic view",
+    "BDC Sources & Lineage": "The SAP BDC data products the app reads, and their lineage",
 }
 
 
@@ -228,7 +228,7 @@ def build_quick_start(F):
 
     h1(doc, "The ten-minute path")
     steps = [
-        ["1", "Executive Overview", "Open on the P&L headline. "
+        ["1", "Executive Dashboard", "The app opens here, on the P&L headline. "
          f"{money(F['pnl_by_year'][1]['REVENUE'])} revenue, "
          f"{money(F['pnl_by_year'][1]['NET_INCOME'])} net income in "
          f"{F['pnl_by_year'][1]['FISCALYEAR']}. Say: this is SAP's own ledger, not a copy."],
@@ -241,8 +241,8 @@ def build_quick_start(F):
         ["4", "Accounts Payable", "Aging buckets — "
          + ", ".join(f"{r['AGING_BUCKET']} {r['INVOICES']}" for r in F["ap_aging"][:3])
          + ". Ask them what their own 90-day bucket looks like."],
-        ["5", "Cortex Analyst", "Ask one question in plain English. Let them choose it. "
-         "This is the moment that lands."],
+        ["5", "Ask Cortex", "First item in the sidebar. Ask one question in plain English. "
+         "Let them choose it. This is the moment that lands."],
     ]
     table(doc, ["#", "Page", "What to do and say"], steps, [0.4, 1.8, 4.7], zebra=True)
 
@@ -345,7 +345,7 @@ def build_architecture(F):
         ["App — Cost/Profit Centres, AP, AR",
          "L2 dynamic tables",
          f"{F['app_reads_l2']} FROM clauses on ANALYTICS"],
-        ["Cortex Analyst",
+        ["Cortex Analyst (server /api/analyst route; no app page)",
          f"a stage model file, {M['stage_file']}",
          f"{len(M['tables'])} tables, {M['measures']} measures"],
         ["Semantic views",

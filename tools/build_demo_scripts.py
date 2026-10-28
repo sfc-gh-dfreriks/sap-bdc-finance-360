@@ -168,7 +168,7 @@ def cover(doc, F):
          "back; scripts 4 and 5 do not, for a reason set out in both.")
 
     table(doc, ["#", "Persona", "Opens on", "Closes on", "Mins"], [
-        ["1", "**CFO**", "Executive Overview",
+        ["1", "**CFO**", "Executive Dashboard",
          "the ledger and the report cannot disagree, because there is one copy", "6"],
         ["2", "Group Controller", "General Ledger",
          "the audit trail runs from the summary to the SAP document item", "8"],
@@ -229,7 +229,7 @@ def script_cfo(doc, F):
     persona_header(
         doc, 1, "CFO", 6, "CFO and finance leadership",
         "Can I trust a number that did not come out of SAP?",
-        "Executive Overview")
+        "Executive Dashboard")
 
     who(doc,
         "A CFO is not buying a dashboard. They already have dashboards. What they do not "
@@ -239,7 +239,7 @@ def script_cfo(doc, F):
         "reconciling them. That is the fear to address, and it is the only one that "
         "matters in six minutes.")
 
-    open_on(doc, "Executive Overview",
+    open_on(doc, "Executive Dashboard",
             "Because it carries the P&L headline, and the headline is the figure they "
             "would challenge first. Starting anywhere else looks like you are working up "
             "to it.")
@@ -283,7 +283,7 @@ def script_cfo(doc, F):
           f"the whole claim.”")
 
     avoid(doc, [
-        "**The Cortex Analyst page. **A CFO asks it something about payables or the P&L "
+        "**Cortex Analyst (no longer an app page). **A CFO asks it something about payables or the P&L "
         "summary within two questions, and it cannot answer either. Neither table is in "
         "the model.",
         "**The aging screens. **They sit on different date windows from the P&L, and "
@@ -356,7 +356,7 @@ def script_controller(doc, F):
           f"resembles SAP's, it's SAP's.”")
 
     avoid(doc, [
-        "**The Cortex Analyst page for anything involving GL balance. **DT_GL_BALANCE is "
+        "**Cortex Analyst for anything involving GL balance. **DT_GL_BALANCE is "
         "not in the model, so it will answer from the wrong table or not at all. A "
         "controller will notice, and then trust nothing else you showed.",
         "**Talk of a single governed contract behind every screen. **Not true here: "
@@ -385,7 +385,7 @@ def script_fpa(doc, F):
         "a decline, so the honesty here is doing them a favour rather than covering you.")
 
     open_on(doc, "Period Analysis",
-            "Because period comparison is the job. Opening on the Executive Overview "
+            "Because period comparison is the job. Opening on the Executive Dashboard "
             "shows them a conclusion; this page shows them the instrument they would "
             "actually use.")
 
@@ -433,7 +433,7 @@ def script_fpa(doc, F):
         "FP&A are the audience most likely to screenshot it.",
         "**Plan-versus-actual of any kind. **There is no plan data. Do not mock one up.",
         "**Payables aging next to a P&L period. **Different windows.",
-        "**The Cortex Analyst page for P&L summary questions. **DT_PNL_SUMMARY is not in "
+        "**Cortex Analyst for P&L summary questions. **DT_PNL_SUMMARY is not in "
         "the model, and the P&L is the first thing an FP&A lead would type.",
     ])
 
@@ -491,7 +491,7 @@ def script_ap(doc, F):
     callout(
         doc,
         "Do not demo the agent to this persona",
-        f"The Cortex Analyst page cannot answer payables questions. DT_AP_AGING is "
+        f"Cortex Analyst cannot answer payables questions. DT_AP_AGING is "
         f"**not** in the semantic model file — the model covers "
         f"{', '.join(F['analyst_covered'])} and nothing else. If you open the agent in "
         f"front of an AP manager, the first thing they will type is a payables question, "
@@ -515,7 +515,7 @@ def script_ap(doc, F):
           f"this afternoon, and it came out of SAP data nobody had to extract.”")
 
     avoid(doc, [
-        "**The Cortex Analyst page. **See the warning above. This is not a preference, it "
+        "**Cortex Analyst (no longer an app page). **See the warning above. This is not a preference, it "
         "is a coverage gap.",
         "**The receivables screens in the same breath. **Different date window, and "
         "putting the two aging views side by side invites a comparison that is not valid.",
@@ -605,7 +605,7 @@ def script_ar(doc, F):
         "Two aging views on different windows look comparable and are not.",
         "**A working-capital or DSO story spanning both AP and AR. **Same reason. There is "
         "no shared period to compute it over.",
-        "**The Cortex Analyst page, unless you stay strictly on receivables. **AR aging is "
+        "**Cortex Analyst, unless you stay strictly on receivables. **AR aging is "
         "in the model, so a receivables question will work, but there are zero verified "
         "queries behind it and one step sideways into payables fails.",
         "**Named-customer promises. **The screen supports a worklist; treat any individual "

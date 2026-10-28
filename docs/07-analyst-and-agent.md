@@ -13,7 +13,7 @@ not share a model.
 
 | Consumer | Reads | Surface |
 |---|---|---|
-App page 9, "Cortex Analyst" | the **stage YAML** | the deployed React app |
+App server route `/api/analyst` (no page) | the **stage YAML** | the deployed React app |
 `SAP_FINANCE_360_AGENT` | a semantic view | Snowflake Intelligence |
 Hand-written `SEMANTIC_VIEW(...)` | the named semantic view | worksheet or client |
 
@@ -23,7 +23,7 @@ and it wasted real time, because the symptom of getting it wrong is
 indistinguishable from an edit having no effect: you change a semantic view,
 reload the app, and every answer is identical.
 
-If an answer on the app's Analyst page is wrong, the artefact to change is:
+If an answer on the app's `/api/analyst` route is wrong, the artefact to change is:
 
 ```
 @SAP_FINANCE_360.SEMANTIC.SEMANTIC_MODELS/finance_360.semantic.yaml
@@ -83,7 +83,7 @@ Three of the seven L2 objects are absent:
 The problem is not the count, it is the overlap with the navigation. The app
 presents a dedicated **Accounts Payable** page, a **General Ledger** page and a
 **Period Analysis** page. A user reads those nine sidebar entries as a statement
-of scope, then asks the Analyst page about payables — and the model has no table
+of scope, then asks Cortex Analyst about payables — and the model has no table
 to land on.
 
 Nothing in the interface signals the boundary. There is no "this model covers
@@ -190,22 +190,20 @@ an architect in the room will notice.
 
 ---
 
-## The Cortex Analyst page in the app
+## The Cortex Analyst page in the app (removed)
 
-Page 9 of 9. Its screenshot is `/tmp/finance_shots/08_analyst.png`.
-
-One implementation detail from the capture work that reveals something about the
-page: it is the only page besides BDC Data Products whose screenshot settles on
-`[class*=card]` rather than `canvas`. Both are card layouts with no chart. The
-Analyst page renders results as text and tables, not as visualisations, so a
-capture script waiting for a canvas on it waits forever.
+The in-app Cortex Analyst page was removed in the nav change. The server's
+`/api/analyst` route and the stage model still exist, and the
+`SAP_FINANCE_360_AGENT` is still available in Snowflake Intelligence. In the app,
+natural-language questions now go through **Ask Cortex** (page 1 of 9, screenshot
+`/tmp/finance_shots/00_ask-cortex.png`).
 
 ---
 
 ## Ask Cortex (page analysis)
 
-Separate from the Analyst page, which is unchanged. **Ask Cortex** is the first
-sidebar item, and each data page has an "Ask Cortex about <page>" button with two
+**Ask Cortex** is the first sidebar item (the app opens on Executive Dashboard,
+item 2), and each data page has an "Ask Cortex about <page>" button with two
 suggested questions. The server (`routes/askCortex.ts`) runs a fixed set of SQL
 "facts" for that page over the same tables the page uses (all company codes and
 years, sidebar filters not applied), then calls `AI_COMPLETE` (default
@@ -234,7 +232,7 @@ What to state rather than let be discovered:
   the app has pages for them.
 - AR is generated data, not SAP-shared, because the products in scope publish no
   receivables object.
-- The app's Analyst page and the Intelligence agent read different artefacts and
+- The app's `/api/analyst` route and the Intelligence agent read different artefacts and
   may differ.
 
 Declaring the gaps first costs a minute. Being caught by a payables question that

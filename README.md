@@ -31,7 +31,7 @@ sap-bdc-finance-360/
 
 `SAP BDC Standard Data Products (L0)` → `SAP_BDC_L1 curated views (L1)` →
 `ANALYTICS dynamic tables (L2)` → `SAP_FINANCE_360 semantic view` →
-`SAP_FINANCE_360_AGENT` + Native App "Ask the Agent".
+`SAP_FINANCE_360_AGENT` (Snowflake Intelligence) + Native App "Ask Cortex".
 
 Full detail (with diagram and per-table transform logic):
 [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
@@ -48,10 +48,16 @@ Step-by-step runbook: [`docs/INSTALL.md`](docs/INSTALL.md).
 
 ## The app
 
-A React dashboard covering **Overview, General Ledger, Cost Centers, Profit
-Centers, Accounts Payable, Accounts Receivable, Period Analysis, BDC Data
-Products**, plus an **Ask the Agent** page (Cortex Analyst over the bundled
-`SAP_FINANCE_360` semantic view). Company codes: **1000 = US, 2100 = DE,
+A React dashboard with **Ask Cortex** (first in the sidebar) plus an "Ask Cortex about <page>" button
+under each data page header with two suggested questions: the server gathers live
+facts for that page from the app's own tables and asks Snowflake Cortex
+(`AI_COMPLETE`, default model `claude-sonnet-4-5`, override with `CORTEX_MODEL`) for a
+markdown analysis (background job, `POST/GET /api/ask-cortex`, 2 s polling).
+
+Sidebar order: **Ask Cortex, Executive Dashboard** (the app opens here)**, General
+Ledger, Cost Centers, Profit Centers, Accounts Payable, Accounts Receivable, Period
+Analysis, BDC Sources & Lineage**. The `SAP_FINANCE_360_AGENT` Cortex Agent is used
+from Snowflake Intelligence and has no in-app page. Company codes: **1000 = US, 2100 = DE,
 5000 = JP**.
 
 ## Demo

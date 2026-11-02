@@ -23,9 +23,11 @@ from cryptography.hazmat.backends import default_backend
 PKG = "FINANCE_360_PKG"
 LISTING = "FINANCE_360_ORG"
 CONTACT = os.environ.get("LISTING_CONTACT", "you@example.com")
-DESC = ("Self-contained SAP Finance 360 dashboard (React + Express on Snowpark "
-        "Container Services) with bundled data and a Cortex Analyst 'Ask the Agent' "
-        "page powered by the SAP_FINANCE_360_AGENT semantic model. No data setup required.")
+DESC = ("Self-contained SAP Finance 360 dashboard (React + Express on Snowpark Container Services) "
+        "with bundled data. The Ask Cortex page, and the 'Ask Cortex about <page>' button on every "
+        "data page, have Snowflake Cortex (AI_COMPLETE) analyse the live figures for that page and recommend "
+        "actions. The app opens on the Executive Dashboard. "
+        "No data setup required.")
 
 
 def connect(conn_name, **kw):

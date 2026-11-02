@@ -150,6 +150,26 @@ DOMAINS = {
             ("Built on", "SAP BDC zero-copy shares · Snowflake · Cortex"),
         ],
     ),
+    "jco": dict(
+        segments="segments_jco",
+        app="http://localhost:5187/",
+        work=pathlib.Path("/tmp/jco_video"),
+        out=HOME / "Documents" / "SAP" / "SAP Skills" / "sap-jco-snowflake" / "sap_jco_extractor_react" / "docs"
+            / "SAP_JCo_Extractor_Demo.mp4",
+        title="SAP JCo Extractor",
+        subtitle="SAP ABAP data to Snowflake over RFC",
+        tagline="tables · CDS · documents · SLT · security",
+        # Spoken over the title card, which then holds for as long as the line takes.
+        title_narration=(
+            "S A P Jay Co Extractor. [[slnc 350]] S A P A Bap data to Snowflake over R F C. "
+            "[[slnc 350]] A narrated walkthrough of tables, C D S views, documents, S L T and security."
+        ),
+        links=[
+            ("Source and documentation", "github.com/sfc-gh-dfreriks/sap-jco-snowflake"),
+            ("SAP system", "S/4HANA S4H client 100 via SAP JCo 3.1"),
+            ("Built on", "SAP JCo · Snowflake dynamic tables · Cortex AI"),
+        ],
+    ),
     "supply_chain_demo": dict(
         segments="segments_supply_chain_demo",
         app="http://localhost:5174/",
@@ -172,6 +192,21 @@ DOMAINS = {
              "Supply Chain 360 · Supply Chain Ontology (Scenario Studio)"),
             ("Built on",
              "SAP BDC Connect · Snowflake · Cortex Analyst · knowledge graph"),
+        ],
+    ),
+    "mfg_spend": dict(
+        segments="segments_mfg_spend",
+        app="http://localhost:5188/",
+        work=pathlib.Path("/tmp/mfg_spend_video"),
+        out=HOME / "Documents" / "SAP" / "Multi_ERP_Spend_Presales_Kit" / "Multi_ERP_Spend_Walkthrough.mp4",
+        title="Multi-ERP Spend & Supplier Risk",
+        subtitle="Any SAP (ECC, S/4HANA, BW or BDC)\nplus non-SAP ERPs, on Snowflake",
+        tagline="synthetic data · every figure read from the live app",
+        # No Native App endpoint for this app, so no "Live application" link.
+        links=[
+            ("Public demo", "sfc-gh-dfreriks.github.io/mfg-multi-erp-spend-public"),
+            ("Source and documentation", "github.com/sfc-gh-dfreriks/mfg-use-cases"),
+            ("Built on", "SAP and non-SAP ERPs · Snowflake · dbt · Cortex"),
         ],
     ),
 }
@@ -317,9 +352,31 @@ def phase_narrate(voice, rate, engine="say"):
     d = work() / "audio"
     d.mkdir(parents=True, exist_ok=True)
     clips = []
+    title_secs = TITLE_SECS
+    if CFG.get("title_narration"):
+        # The title card is read aloud: voice it like a segment and hold the card for its length.
+        segs = [dict(id="_title", narration=CFG["title_narration"])]
+    else:
+        segs = []
     if engine == "qwen3":
-        print("  voicing all segments with Qwen3-TTS (cloned voice)…")
-        qwen_batch([(seg["narration"], d / f"{seg['id']}.src.wav") for seg in SEGMENTS])
+        # Cloned-voice lines take about a minute each, so a line is re-voiced only when its text changed:
+        # the text it was voiced from is kept next to the audio in <id>.txt.
+        todo = [seg for seg in segs + SEGMENTS
+                if not (d / f"{seg['id']}.src.wav").exists()
+                or not (d / f"{seg['id']}.txt").exists()
+                or (d / f"{seg['id']}.txt").read_text() != seg["narration"]]
+        print(f"  voicing {len(todo)} of {len(SEGMENTS)} segments with Qwen3-TTS (cloned voice); the rest are unchanged…")
+        if todo:
+            qwen_batch([(seg["narration"], d / f"{seg['id']}.src.wav") for seg in todo])
+            for seg in todo:
+                (d / f"{seg['id']}.txt").write_text(seg["narration"])
+    for seg in segs:
+        src = d / "_title.src.wav"
+        if engine != "qwen3":
+            speak(engine, voice, rate, seg["narration"], src)
+        run(["ffmpeg", "-y", "-v", "error", "-i", str(src), "-ar", "48000", "-ac", "2", str(d / "_title.wav")])
+        title_secs = max(TITLE_SECS, round(duration(d / "_title.wav") + 1.0, 3))
+        print(f"  {'_title':18} {duration(d / '_title.wav'):6.2f}s spoken  -> title card holds {title_secs:5.2f}s")
     for seg in SEGMENTS:
         aiff = d / f"{seg['id']}.aiff"
         wav = d / f"{seg['id']}.wav"
@@ -340,7 +397,8 @@ def phase_narrate(voice, rate, engine="say"):
 
     (work() / "clips.json").write_text(json.dumps(
         dict(voice={"personal": personal_voice, "qwen3": lambda: "Qwen3-TTS clone of Dave"}.get(engine, lambda: voice)(),
-             rate=rate, engine=engine, title=TITLE_SECS, end=END_SECS,
+             rate=rate, engine=engine, title=title_secs, end=END_SECS,
+             title_narrated=bool(segs),
              clips=clips), indent=2))
     spk = sum(c["secs"] for c in clips)
     print(f"\n  {len(clips)} clips · {spk:.1f}s of narration "
@@ -360,7 +418,10 @@ def build_audio_track():
     total = tl["total"]
 
     inputs, filt, labels = [], [], []
-    for i, s in enumerate(tl["segments"]):
+    clips = list(tl["segments"])
+    if tl.get("title_narrated"):
+        clips.insert(0, dict(id="_title", start=0.0))
+    for i, s in enumerate(clips):
         inputs += ["-i", str(d / f"{s['id']}.wav")]
         ms = int(round(s["start"] * 1000))
         filt.append(f"[{i}:a]adelay={ms}|{ms}[a{i}]")
@@ -532,7 +593,7 @@ def phase_capture():
         # t0 marks video-time zero for the timeline. Everything before it is
         # page-load noise and gets trimmed off the front in assembly.
         t0 = time.monotonic()
-        pg.wait_for_timeout(int(TITLE_SECS * 1000))
+        pg.wait_for_timeout(int(cl["title"] * 1000))
 
         segments, cur_page, cur_app = [], None, first_app
         for s in cl["clips"]:
@@ -584,7 +645,7 @@ def phase_capture():
     preroll = round(t0 - t_rec, 3)
     (work() / "timeline.json").write_text(json.dumps(
         dict(total=round(total, 3), preroll=max(0.0, preroll),
-             title=cl["title"], end=cl["end"],
+             title=cl["title"], end=cl["end"], title_narrated=cl.get("title_narrated", False),
              voice=cl["voice"], rate=cl["rate"], segments=segments), indent=2))
     print(f"\n  captured {raw:.1f}s · timeline {total:.1f}s · "
           f"pre-roll to trim {preroll:.1f}s · tail after timeline {raw - total - preroll:.1f}s")
@@ -623,6 +684,19 @@ def do_action(pg, act):
         pg.wait_for_timeout(600)
     elif kind == "wait":
         pg.wait_for_timeout(act[1])
+    elif kind == "dismiss":                   # ("dismiss", overlay selector) — click each overlay's first button (its X) until none is left
+        for _ in range(5):
+            ov = pg.locator(act[1])
+            if not ov.count():
+                break
+            ov.first.locator("button").first.evaluate("e => e.click()")  # the X can sit under the drawer's own content
+            pg.wait_for_timeout(700)
+    elif kind == "set_range":                 # ("set_range", nth range input, value) — drive a React slider
+        pg.locator("input[type=range]").nth(act[1]).evaluate(
+            "(e, v) => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(e, v);"
+            " e.dispatchEvent(new Event('input', {bubbles: true})); e.dispatchEvent(new Event('change', {bubbles: true})); }",
+            str(act[2]))
+        pg.wait_for_timeout(900)
     # ---- actions used by multi-app videos (e.g. Snowsight + two apps) ----
     elif kind == "goto":                      # ("goto", url[, settle_ms])
         pg.goto(act[1], wait_until="domcontentloaded")

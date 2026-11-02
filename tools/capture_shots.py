@@ -58,6 +58,12 @@ APPS = {
         "sidebar": SKILLS / "spend_360_react/client/src/components/Sidebar.tsx",
         "out": pathlib.Path("/tmp/spend_shots"),
     },
+    # Manufacturing use cases live in their own repo (~/Documents/GitHub/mfg-use-cases).
+    "mfg_spend": {
+        "url": "http://localhost:5188",
+        "sidebar": pathlib.Path.home() / "Documents/GitHub/mfg-use-cases/use_cases/01_multi_erp_spend/app/client/src/components/Sidebar.tsx",
+        "out": pathlib.Path("/tmp/mfg_spend_shots"),
+    },
 }
 
 

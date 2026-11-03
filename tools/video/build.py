@@ -209,6 +209,20 @@ DOMAINS = {
             ("Built on", "SAP and non-SAP ERPs · Snowflake · dbt · Cortex"),
         ],
     ),
+    "mfg_o2c": dict(
+        segments="segments_mfg_o2c",
+        app="http://localhost:5190/",
+        work=pathlib.Path("/tmp/mfg_o2c_video"),
+        out=HOME / "Documents" / "SAP" / "Order_to_Cash_Presales_Kit" / "Order_to_Cash_Walkthrough.mp4",
+        title="Orders to Cash",
+        subtitle="Any SAP (ECC, S/4HANA, BW or BDC)\nplus CRM, carrier, AR and bank feeds, on Snowflake",
+        tagline="synthetic data · every figure read from the live app",
+        links=[
+            ("Public demo", "sfc-gh-dfreriks.github.io/mfg-order-to-cash-public"),
+            ("Source and documentation", "github.com/sfc-gh-dfreriks/mfg-use-cases"),
+            ("Built on", "SAP and non-SAP sources · Snowflake · dbt · Cortex"),
+        ],
+    ),
 }
 
 W, H = 1600, 1000              # browser viewport
